@@ -1,36 +1,31 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { User, Phone, MapPin, Building, Edit } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { User, Phone, MapPin, Building, Edit } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
-  const navigate = useNavigate()
-  const [userProfile, setUserProfile] = useState(null)
-  const [telegramPhoto, setTelegramPhoto] = useState(null)
+  const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+  const [telegramPhoto, setTelegramPhoto] = useState(null);
 
   useEffect(() => {
-    // Get user profile from localStorage
-    const profile = localStorage.getItem("userProfile")
+    const profile = localStorage.getItem("userProfile");
     if (profile) {
-      setUserProfile(JSON.parse(profile))
+      setUserProfile(JSON.parse(profile));
     } else {
-      // If no profile, redirect to register
-      navigate("/register")
+      navigate("/register");
     }
 
-    // Try to get Telegram user photo if available
     if (window.Telegram && window.Telegram.WebApp) {
-      const tgUser = window.Telegram.WebApp.initDataUnsafe?.user
+      const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
       if (tgUser && tgUser.photo_url) {
-        setTelegramPhoto(tgUser.photo_url)
+        setTelegramPhoto(tgUser.photo_url);
       }
     }
-  }, [navigate])
+  }, [navigate]);
 
   const handleEdit = () => {
-    navigate("/register")
-  }
+    navigate("/register", { state: { userProfile } });
+  };
 
   if (!userProfile) {
     return (
@@ -40,36 +35,41 @@ const Profile = () => {
           <p>Yuklanmoqda...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#1a2328] p-4 pb-[130px]">
-      <div className="max-w-md mx-auto">
-        <div className="bg-[#2d3a42] rounded-2xl shadow-modern-lg overflow-hidden border border-[#3a4a54]">
+      <div className="w-full h-full">
+        <div className="bg-[#2d3a4] rounded-b-2xl h-full shadow-modern-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-br from-[#4a90e2] to-[#357abd] p-6 text-center">
+          <div className="header sticky top-0 w-full h-full py-10 flex flex-col items-center justify-center gradient-primary shadow-modern-lg z-10">
             <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg">
               {telegramPhoto ? (
-                <img src={telegramPhoto || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
+                <img
+                  src={telegramPhoto || "/placeholder.svg"}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full bg-white flex items-center justify-center">
                   <User className="w-12 h-12 text-[#4a90e2]" />
                 </div>
               )}
             </div>
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight">
               {userProfile.firstName} {userProfile.lastName}
             </h1>
             <p className="text-white/80 text-sm">{userProfile.middleName}</p>
           </div>
-
+          
           {/* Profile Info */}
           <div className="p-6 space-y-4">
             <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
               <Phone className="w-5 h-5 text-[#4a90e2]" />
               <div>
-                <p className="text-xs text-gray-400 font-medium">Telefon raqam</p>
+                <p className="text-xs text-gray-400 font-medium">
+                  Telefon raqam
+                </p>
                 <p className="text-white font-semibold">{userProfile.phone}</p>
               </div>
             </div>
@@ -86,7 +86,9 @@ const Profile = () => {
               <Building className="w-5 h-5 text-[#4a90e2]" />
               <div>
                 <p className="text-xs text-gray-400 font-medium">Tuman</p>
-                <p className="text-white font-semibold">{userProfile.district}</p>
+                <p className="text-white font-semibold">
+                  {userProfile.district}
+                </p>
               </div>
             </div>
           </div>
@@ -103,8 +105,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

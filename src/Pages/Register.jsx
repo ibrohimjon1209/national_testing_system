@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
 import { User, Phone, MapPin, Building } from "lucide-react"
 
 const Register = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -207,67 +208,56 @@ const Register = () => {
     ],
   }
 
+  // Agar Profile sahifasidan redirect bo'lsa yoki localStorage da userProfile bo'lsa,
+  // formni boshlang'ich qiymatlar bilan to'ldiramiz.
+  useEffect(() => {
+    const profileFromState = location.state?.userProfile
+    if (profileFromState) {
+      setFormData((prev) => ({ ...prev, ...profileFromState }))
+      return
+    }
+
+    const stored = localStorage.getItem("userProfile")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setFormData((prev) => ({ ...prev, ...parsed }))
+      } catch (e) {
+        // invalid JSON -> ignore
+      }
+    }
+  }, [location.state])
+
+  // editing flag: agar Profile dan kelgan bo'lsa tahrirlash rejimi
+  const isEditing = !!location.state?.userProfile
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
-
-    if (name === "phone") {
-      // Ensure phone always starts with +998
-      if (!value.startsWith("+998")) {
-        return
-      }
-      // Limit to +998 + 9 digits
-      if (value.length > 13) {
-        return
-      }
-    }
-
-    if (name === "region") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-        district: "", // Reset district when region changes
-      }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }))
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-
-    // Validate form
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.middleName ||
-      !formData.phone ||
-      formData.phone.length !== 13 ||
-      !formData.region ||
-      !formData.district
-    ) {
-      alert("Iltimos, barcha maydonlarni to'ldiring!")
-      return
-    }
-
-    // Save to localStorage
+    // Saqlash: localStorage ga yozamiz
     localStorage.setItem("userProfile", JSON.stringify(formData))
-
-    // Navigate to home
-    navigate("/")
+    // Tahrirlashdan keyin profilga qaytamiz, aks holda bosh sahifaga
+    if (isEditing) {
+      navigate("/profile")
+    } else {
+      navigate("/")
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[#1a2328] flex items-center justify-center p-4">
+    <div className="w-full p-4.5 -mb-30">
       <div className="w-full max-w-md bg-[#2d3a42] rounded-2xl shadow-modern-lg p-6 border border-[#3a4a54]">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-[#4a90e2] to-[#357abd] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <User className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Ro'yxatdan o'tish</h1>
-          <p className="text-gray-300 mt-2">Ma'lumotlaringizni kiriting</p>
+          <h1 className="text-white text-2xl font-bold mb-4">
+            {isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"}
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -378,7 +368,7 @@ const Register = () => {
             type="submit"
             className="w-full bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold hover:from-[#357abd] hover:to-[#2968a3] transition-all duration-200 mt-6 shadow-lg"
           >
-            Ro'yxatdan o'tish
+            {isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"}
           </button>
         </form>
       </div>

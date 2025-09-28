@@ -109,9 +109,9 @@ const Create_test = () => {
     <div className='w-full h-full'>
       <div className="header sticky top-0 w-full h-[150px] flex flex-col justify-center gradient-primary shadow-modern-lg z-10">
         <Link to={"/web.telegram.org"}>
-          <div className='flex gap-[5px] ml-[10px] mt-[-40px]'>
+          <div className='flex gap-[5px] ml-[10px] mt-[-40px] underline'>
             <CircleQuestionMark className='text-white' />
-            <h1 className='font-inter text-[15px] underline text-white'>Yo'riqnoma</h1>
+            <h1 className='font-inter text-[15px] text-white'>Yo'riqnoma</h1>
           </div>
         </Link>
 
