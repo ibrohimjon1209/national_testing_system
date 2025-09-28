@@ -1,0 +1,20 @@
+@keyframes dropdownFade {
+    0% {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .custom-select option {
+    background-color: #242f34;
+    color: white;
+  }
+  
+  .custom-select:focus option {
+    animation: dropdownFade 0.3s ease-in-out;
+  }
+  
