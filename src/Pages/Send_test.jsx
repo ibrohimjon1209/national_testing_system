@@ -12,30 +12,30 @@ const Send_test = () => {
   const [submitted, setSubmitted] = useState(false)
   const navigate = useNavigate();
 
-  const handleInputChange = (e) => {
-    const value = e.target.value
-    setInputValue(value)
+const handleInputChange = (e) => {
+  const value = e.target.value
+  setInputValue(value)
 
-    if (/^\d{0,4}$/.test(value)) {
-      setIsError(false)
-    } else {
-      setIsError(true)
-    }
+  if (/^\d*$/.test(value)) {
+    setIsError(false)
+  } else {
+    setIsError(true)
   }
+}
 
-  const handleIsFind = () => {
-    if (/^\d{4}$/.test(inputValue)) {
-      setLoading(true)
-      setIsError(false)
-      setTimeout(() => {
-        setIsFind(true)
-        setLoading(false)
-      }, 500)
-    } else {
-      setIsFind(false)
-      setIsError(true)
-    }
+const handleIsFind = () => {
+  if (/^\d+$/.test(inputValue)) {
+    setLoading(true)
+    setIsError(false)
+    setTimeout(() => {
+      setIsFind(true)
+      setLoading(false)
+    }, 500)
+  } else {
+    setIsFind(false)
+    setIsError(true)
   }
+}
 
   const [answers, setAnswers] = useState({})
   const [errors, setErrors] = useState({})
@@ -156,7 +156,7 @@ const Send_test = () => {
       <div className='w-full h-full px-[25px]'>
         <div className='mt-[20px]'>
           <h1 className='text-white mb-[5px] text-[15px] font-[400]'>
-            {isError ? "Faqat 4 ta raqam bo'lishi kerak!" : "Test kodini kiriting"}
+            {isError ? "Faqat raqam kiritilishi kerak!" : "Test kodini kiriting"}
           </h1>
           <input
             type='text'
