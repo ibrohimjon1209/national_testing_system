@@ -323,6 +323,12 @@ const Create_test = () => {
           console.error('Selected subject not found');
           return;
         }
+        await create_test(
+          formattedAnswers,
+          selectedSubjectData,
+          isChecked,
+          isChecked ? channelUsername : null
+        );
         window.location.href = "/"
       } catch (error) {
         console.error('Failed to create test:', error);
