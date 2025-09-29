@@ -1,15 +1,36 @@
 import { CircleQuestionMark, Check, CircleCheck } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './style.css'
 import { motion, AnimatePresence } from 'framer-motion'
+import get_subjects from '../Services/get_subjects'
+import create_test from '../Services/create_test'
 
 const Create_test = () => {
   const [isChecked, setIsChecked] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [answers, setAnswers] = useState({})
   const [errors, setErrors] = useState({})
+  const [subjects, set_subjects] = useState([])
+  const [channelError, setChannelError] = useState("")
+  const [dateError, setDateError] = useState("")
+  const [testDate, setTestDate] = useState("")
+  const [selectedSubject, setSelectedSubject] = useState("")
   const startMultiQuestions = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
+
+  useEffect(() => {
+      const fetch_subjects = async () => {
+        try {
+          const data = await get_subjects();
+          set_subjects(data.results || []);
+        } catch (e) {
+          console.error("Failed to fetch subjects", e);
+          set_subjects([]);
+        } finally {
+        }
+      };
+      fetch_subjects();
+    }, []);
 
   const [multiCounts, setMultiCounts] = useState(
     startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 1 }), {})
@@ -93,7 +114,113 @@ const Create_test = () => {
     }))
   }
 
-  const handleCreate = () => {
+  // Username state'ini @ bilan boshlang'ich qiymat sifatida o'rnatamiz
+  const [channelUsername, setChannelUsername] = useState("@");
+
+  // Username o'zgartirilganda tekshirish va formatlash
+  const handleChannelChange = (e) => {
+    let value = e.target.value;
+    
+    // Agar @ bilan boshlanmasa, @ qo'shamiz va ortiqcha @larni olib tashlaymiz
+    if (!value.startsWith("@")) {
+      value = "@" + value.replace(/^@*/, "");
+    }
+    
+    // Bo'sh qiymat kiritilganda @ ni saqlab qolamiz
+    if (value === "") {
+      value = "@";
+    }
+    
+    setChannelUsername(value);
+
+    // Validatsiya
+    if (value.length < 2) {
+      setChannelError("Username kamida 1 belgidan iborat bo'lishi kerak");
+    } else {
+      setChannelError("");
+    }
+  };
+
+  const handleDateChange = (e) => {
+    const value = e.target.value;
+    setTestDate(value);
+
+    // Validatsiya: kelajak sanasi va vaqti
+    if (value) {
+      const selected = new Date(value);
+      const now = new Date();
+      
+      const timeDifference = selected.getTime() - now.getTime();
+      
+      if (timeDifference <= 0) {
+        setDateError("Test vaqti hozirgi vaqtdan keyin bo'lishi kerak");
+      } else {
+        setDateError("");
+      }
+    } else {
+      setDateError("");
+    }
+  };
+
+  const handleSubjectChange = (e) => {
+    setSelectedSubject(e.target.value);
+  }
+
+  const isFormValid = () => {
+    // Check if subject is selected
+    if (!selectedSubject) return false;
+
+    // Check first 32 questions (single choice)
+    for (let i = 1; i <= 32; i++) {
+      if (!answers[i]) return false;
+    }
+
+    // Check questions 33-35 (multiple choice)
+    for (let i = 33; i <= 35; i++) {
+      if (!answers[i]) return false;
+    }
+
+    // Check multi-answer questions (36-45)
+    for (let question of startMultiQuestions) {
+      const values = multiValues[question] || [];
+      if (values.some(value => !value?.trim())) return false;
+    }
+
+    // If test is public, check channel and date
+    if (isChecked) {
+      if (channelUsername.length < 2) return false;
+      if (!testDate) return false;
+      if (channelError || dateError) return false;
+    }
+
+    return true;
+  }
+
+  const formatAnswers = () => {
+    const formattedAnswers = {};
+
+    // 1-35 savollar uchun (ABCD va ABCDEF javoblar)
+    for (let i = 1; i <= 35; i++) {
+      if (answers[i]) {
+        formattedAnswers[i] = answers[i];
+      }
+    }
+
+    // 36-45 savollar uchun (ko'p javobli savollar)
+    for (let question of startMultiQuestions) {
+      if (multiValues[question] && multiValues[question].length > 0) {
+        // Har bir javobni katta harfga o'tkazib, object ko'rinishida saqlash
+        formattedAnswers[question] = {};
+        multiValues[question].forEach((value, index) => {
+          formattedAnswers[question][index + 1] = value.toUpperCase();
+        });
+      }
+    }
+
+    return formattedAnswers;
+  };
+
+  const handleCreate = async () => {
     let newErrors = {}
     startMultiQuestions.forEach(q => {
       multiValues[q].forEach((value, idx) => {
@@ -102,7 +229,54 @@ const Create_test = () => {
         }
       })
     })
+
+    // Kanal va sana validatsiyasi
+    if (isChecked) {
+      if (channelUsername.length < 2) {
+        setChannelError("Username kamida 1 belgidan iborat bo'lishi kerak");
+        return;
+      }
+      if (dateError) {
+        return;
+      }
+      if (!testDate) {
+        setDateError("Sanani tanlang");
+        return;
+      }
+    }
+
     setErrors(newErrors)
+
+    // Agar xatoliklar bo'lmasa javoblarni format qilib yuborish
+    if (Object.keys(newErrors).length === 0) {
+      const formattedAnswers = formatAnswers();
+      
+      try {
+        // API ga yuborish uchun ma'lumotlarni tayyorlash
+        const selectedSubjectData = subjects.find(s => s.name === selectedSubject);
+        
+        if (!selectedSubjectData) {
+          console.error('Selected subject not found');
+          return;
+        }
+
+        const response = await create_test(
+          formattedAnswers,
+          selectedSubjectData,
+          isChecked, // is_public
+          isChecked ? channelUsername : null // channel_username
+        );
+
+        console.log('Test created successfully:', response);
+        // Test muvaffaqiyatli yaratildi
+        // Bu yerda kerakli navigatsiya yoki notification qo'shishingiz mumkin
+
+      } catch (error) {
+        console.error('Failed to create test:', error);
+        // Xatolik yuz berdi
+        // Bu yerda xatolik haqida foydalanuvchiga xabar berishingiz mumkin
+      }
+    }
   }
 
   return (
@@ -126,10 +300,12 @@ const Create_test = () => {
           <select
             className='custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300'
             defaultValue=""
+            onChange={handleSubjectChange}
           >
             <option value="" disabled>--Fanni tanlang--</option>
-            <option className='bg-[#242f34]' value="matematika">Matematika</option>
-            <option className='bg-[#242f34]' value="ingliz">Ingliz tili</option>
+            {subjects.map((subject) => (
+              <option className='bg-[#242f34]' value={subject.name}>{subject.name}</option>
+            ))}
           </select>
         </div>
 
@@ -164,9 +340,12 @@ const Create_test = () => {
                 </h1>
                 <input
                   type='text'
+                  value={channelUsername}
+                  onChange={handleChannelChange}
                   placeholder='@username'
-                  className='custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300'
+                  className={`custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300 ${channelError ? "border-red-500" : ""}`}
                 />
+                {channelError && <div className="text-red-500 text-sm mt-1">{channelError}</div>}
               </div>
 
               <div className='mt-[10px]'>
@@ -175,8 +354,12 @@ const Create_test = () => {
                 </h1>
                 <input
                   type='datetime-local'
-                  className='[color-scheme:dark] custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300'
+                  value={testDate}
+                  onChange={handleDateChange}
+                  min={new Date().toISOString().slice(0,16)}
+                  className={`[color-scheme:dark] custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300 ${dateError ? "border-red-500" : ""}`}
                 />
+                {dateError && <div className="text-red-500 text-sm mt-1">{dateError}</div>}
               </div>
             </motion.div>
           )}
@@ -271,7 +454,12 @@ const Create_test = () => {
 
           <button
             onClick={handleCreate}
-            className='mt-[30px] active:scale-[95%] active:bg-blue-300 gradient-primary shadow-modern-lg z-10 duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]'
+            disabled={!isFormValid()}
+            className={`mt-[30px] duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]
+              ${isFormValid() 
+                ? 'active:scale-[95%] active:bg-blue-300 gradient-primary shadow-modern-lg z-10' 
+                : 'bg-gray-500 cursor-not-allowed opacity-50'
+              }`}
           >
             <h1 className='font-[600] text-[15px]'>Yaratish</h1>
             <CircleCheck className='w-[20px] h-[20px]' />

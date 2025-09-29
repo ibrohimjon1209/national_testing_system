@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { User, Phone, MapPin, Building } from "lucide-react"
@@ -14,6 +12,7 @@ const Register = () => {
     phone: "+998",
     region: "",
     district: "",
+    id: 0
   })
 
   const regions = {

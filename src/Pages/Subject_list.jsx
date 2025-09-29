@@ -49,7 +49,7 @@ const Subject_list = () => {
           </Link>
         ))}
         {subjects.length === 0 && !loading && (
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center mt-5">
             <div className="text-white text-center">
               <p>Ma'lumotlar topilmadi</p>
             </div>
