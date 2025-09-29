@@ -25,7 +25,7 @@ const Navbar = () => {
   const links = [
     { to: "/", icon: BookCheck, label: "Testlar" },
     { to: "/create_test", icon: Plus, label: "Yaratish" },
-    { to: "/send_test", icon: Send, label: "Javob yuborish" },
+    { to: "/send_test", icon: Send, label: "Yuborish" },
     {
       to: hasProfile ? "/profile" : "/register",
       icon: User,
