@@ -19,52 +19,115 @@ const Create_test = () => {
   const startMultiQuestions = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
 
   useEffect(() => {
-      const fetch_subjects = async () => {
-        try {
-          const data = await get_subjects();
-          set_subjects(data.results || []);
-        } catch (e) {
-          console.error("Failed to fetch subjects", e);
-          set_subjects([]);
-        } finally {
-        }
-      };
-      fetch_subjects();
-    }, []);
+    const fetch_subjects = async () => {
+      try {
+        const data = await get_subjects();
+        set_subjects(data.results || []);
+      } catch (e) {
+        console.error("Failed to fetch subjects", e);
+        set_subjects([]);
+      }
+    };
+    fetch_subjects();
+  }, []);
+
+  // order of questions (allows moving a "removed" question to the end)
+  const [questionsOrder, setQuestionsOrder] = useState([...startMultiQuestions])
 
   const [multiCounts, setMultiCounts] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 1 }), {})
+    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 0 }), {})
   )
 
   const [multiValues, setMultiValues] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: [''] }), {})
+    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: [] }), {})
   )
+
+  // Synchronize multiValues with multiCounts to ensure length matches
+  useEffect(() => {
+    setMultiValues(prev => {
+      const newVals = { ...prev };
+      questionsOrder.forEach(q => {
+        const count = multiCounts[q] ?? 0;
+        let arr = prev[q] || [];
+        
+        if (count === 0) {
+          newVals[q] = [];
+        } else {
+          // Trim if too long, fill with '' if too short
+          arr = arr.slice(0, count);
+          while (arr.length < count) {
+            arr.push('');
+          }
+          newVals[q] = arr;
+        }
+      });
+      return newVals;
+    });
+  }, [multiCounts, questionsOrder]);
 
   const increaseCount = (question) => {
     setMultiCounts(prev => {
-      const curr = prev[question] ?? 1
+      const curr = prev[question] ?? 0
       if (curr >= 45) return prev
-      const next = { ...prev, [question]: curr + 1 }
+      const nextCount = curr + 1
+      // ensure values array has slot
       setMultiValues(vals => {
         const arr = vals[question] ? [...vals[question]] : []
         arr.push('')
         return { ...vals, [question]: arr }
       })
-      return next
+
+      // If coming back from 0, place after the last active question
+      if (curr === 0) {
+        setQuestionsOrder(prevOrder => {
+          const without = prevOrder.filter(x => x !== question)
+          const activeQuestions = without.filter(q => (multiCounts[q] ?? 0) > 0)
+          
+          if (activeQuestions.length === 0) {
+            return [question, ...without]
+          }
+
+          const insertIndex = without.indexOf(activeQuestions[activeQuestions.length - 1]) + 1
+          return [
+            ...without.slice(0, insertIndex),
+            question,
+            ...without.slice(insertIndex)
+          ]
+        })
+      }
+
+      return { ...prev, [question]: nextCount }
     })
   }
 
   const decreaseCount = (question) => {
     setMultiCounts(prev => {
-      const curr = prev[question] ?? 1
-      if (curr <= 1) return prev
-      const next = { ...prev, [question]: curr - 1 }
+      const curr = prev[question] ?? 0
+      if (curr <= 0) return prev
+      const next = curr - 1
+
       setMultiValues(vals => {
         const arr = vals[question] ? [...vals[question]] : []
         arr.pop()
-        return { ...vals, [question]: arr.length ? arr : [''] }
+        return { ...vals, [question]: next === 0 ? [] : (arr.length ? arr : ['']) }
       })
-      return next
+
+      // If count becomes 0, move question to the end
+      if (next === 0) {
+        setQuestionsOrder(prevOrder => {
+          const currentIndex = prevOrder.indexOf(question);
+          const newOrder = [...prevOrder];
+          
+          for (let i = currentIndex; i < newOrder.length - 1; i++) {
+            newOrder[i] = newOrder[i + 1];
+          }
+          newOrder[newOrder.length - 1] = question;
+          
+          return newOrder;
+        });
+      }
+
+      return { ...prev, [question]: next }
     })
   }
 
@@ -114,28 +177,19 @@ const Create_test = () => {
     }))
   }
 
-  // Username state'ini @ bilan boshlang'ich qiymat sifatida o'rnatamiz
   const [channelUsername, setChannelUsername] = useState("@");
 
-  // Username o'zgartirilganda tekshirish va formatlash
   const handleChannelChange = (e) => {
     let value = e.target.value;
-    
-    // Agar @ bilan boshlanmasa, @ qo'shamiz va ortiqcha @larni olib tashlaymiz
     if (!value.startsWith("@")) {
       value = "@" + value.replace(/^@*/, "");
     }
-    
-    // Bo'sh qiymat kiritilganda @ ni saqlab qolamiz
     if (value === "") {
       value = "@";
     }
-    
     setChannelUsername(value);
-
-    // Validatsiya
     if (value.length < 2) {
-      setChannelError("Username kamida 1 belgidan iborat bo'lishi kerak");
+      setChannelError("Username kamida 1 belgidan iborat bo'lish kerak");
     } else {
       setChannelError("");
     }
@@ -144,14 +198,10 @@ const Create_test = () => {
   const handleDateChange = (e) => {
     const value = e.target.value;
     setTestDate(value);
-
-    // Validatsiya: kelajak sanasi va vaqti
     if (value) {
       const selected = new Date(value);
       const now = new Date();
-      
       const timeDifference = selected.getTime() - now.getTime();
-      
       if (timeDifference <= 0) {
         setDateError("Test vaqti hozirgi vaqtdan keyin bo'lishi kerak");
       } else {
@@ -167,26 +217,31 @@ const Create_test = () => {
   }
 
   const isFormValid = () => {
-    // Check if subject is selected
     if (!selectedSubject) return false;
 
-    // Check first 32 questions (single choice)
-    for (let i = 1; i <= 32; i++) {
-      if (!answers[i]) return false;
-    }
+    const singleAnswersValid = Array.from({ length: 32 }, (_, i) => i + 1)
+      .every(i => answers[i]);
 
-    // Check questions 33-35 (multiple choice)
-    for (let i = 33; i <= 35; i++) {
-      if (!answers[i]) return false;
-    }
+    if (!singleAnswersValid) return false;
 
-    // Check multi-answer questions (36-45)
-    for (let question of startMultiQuestions) {
-      const values = multiValues[question] || [];
-      if (values.some(value => !value?.trim())) return false;
-    }
+    const multipleChoiceValid = Array.from({ length: 3 }, (_, i) => i + 33)
+      .every(i => answers[i]);
 
-    // If test is public, check channel and date
+    if (!multipleChoiceValid) return false;
+
+    const writtenAnswersValid = questionsOrder.every(q => {
+      const count = multiCounts[q] ?? 0;
+      const rawValues = multiValues[q] || [];
+      const values = rawValues.slice(0, count); // Safety trim
+      
+      return count === 0 || (
+        values.length === count &&
+        values.every(value => value?.trim().length > 0)
+      );
+    });
+
+    if (!writtenAnswersValid) return false;
+
     if (isChecked) {
       if (channelUsername.length < 2) return false;
       if (!testDate) return false;
@@ -198,22 +253,29 @@ const Create_test = () => {
 
   const formatAnswers = () => {
     const formattedAnswers = {};
-
-    // 1-35 savollar uchun (ABCD va ABCDEF javoblar)
+    
     for (let i = 1; i <= 35; i++) {
       if (answers[i]) {
-        formattedAnswers[i] = answers[i];
+        formattedAnswers[i] = answers[i].toUpperCase();
       }
     }
 
-    // 36-45 savollar uchun (ko'p javobli savollar)
-    for (let question of startMultiQuestions) {
-      if (multiValues[question] && multiValues[question].length > 0) {
-        // Har bir javobni katta harfga o'tkazib, object ko'rinishida saqlash
-        formattedAnswers[question] = {};
-        multiValues[question].forEach((value, index) => {
-          formattedAnswers[question][index + 1] = value.toUpperCase();
-        });
+    for (let idx = 0; idx < questionsOrder.length; idx++) {
+      const originalQ = questionsOrder[idx]
+      const count = multiCounts[originalQ] ?? 0
+      
+      if (count > 0) {
+        const rawValues = multiValues[originalQ] || []
+        const values = rawValues.slice(0, count) // Safety trim
+        const isComplete = values.length === count &&
+                          values.every(value => value && value.trim().length > 0)
+        
+        if (isComplete) {
+          formattedAnswers[36 + idx] = {}
+          values.forEach((value, index) => {
+            formattedAnswers[36 + idx][index + 1] = value.trim().toUpperCase()
+          })
+        }
       }
     }
 
@@ -222,18 +284,21 @@ const Create_test = () => {
 
   const handleCreate = async () => {
     let newErrors = {}
-    startMultiQuestions.forEach(q => {
-      multiValues[q].forEach((value, idx) => {
-        if (!value.trim()) {
-          newErrors[`${q}-${idx}`] = true
-        }
-      })
-    })
+    for (let idx = 0; idx < questionsOrder.length; idx++) {
+      const q = questionsOrder[idx]
+      const vals = multiValues[q] || []
+      if ((multiCounts[q] ?? 0) > 0) {
+        vals.forEach((value, i) => {
+          if (!value.trim()) {
+            newErrors[`${q}-${i}`] = true
+          }
+        })
+      }
+    }
 
-    // Kanal va sana validatsiyasi
     if (isChecked) {
       if (channelUsername.length < 2) {
-        setChannelError("Username kamida 1 belgidan iborat bo'lishi kerak");
+        setChannelError("Username kamida 1 belgidan iborat bo'lish kerak");
         return;
       }
       if (dateError) {
@@ -247,34 +312,17 @@ const Create_test = () => {
 
     setErrors(newErrors)
 
-    // Agar xatoliklar bo'lmasa javoblarni format qilib yuborish
     if (Object.keys(newErrors).length === 0) {
       const formattedAnswers = formatAnswers();
-      
       try {
-        // API ga yuborish uchun ma'lumotlarni tayyorlash
         const selectedSubjectData = subjects.find(s => s.name === selectedSubject);
-        
         if (!selectedSubjectData) {
           console.error('Selected subject not found');
           return;
         }
-
-        const response = await create_test(
-          formattedAnswers,
-          selectedSubjectData,
-          isChecked, // is_public
-          isChecked ? channelUsername : null // channel_username
-        );
-
-        console.log('Test created successfully:', response);
-        // Test muvaffaqiyatli yaratildi
-        // Bu yerda kerakli navigatsiya yoki notification qo'shishingiz mumkin
-
+        window.location.href = "/"
       } catch (error) {
         console.error('Failed to create test:', error);
-        // Xatolik yuz berdi
-        // Bu yerda xatolik haqida foydalanuvchiga xabar berishingiz mumkin
       }
     }
   }
@@ -304,7 +352,7 @@ const Create_test = () => {
           >
             <option value="" disabled>--Fanni tanlang--</option>
             {subjects.map((subject) => (
-              <option className='bg-[#242f34]' value={subject.name}>{subject.name}</option>
+              <option key={subject.id} className='bg-[#242f34]' value={subject.name}>{subject.name}</option>
             ))}
           </select>
         </div>
@@ -406,50 +454,59 @@ const Create_test = () => {
           </table>
 
           <div className='mt-[16px] space-y-6'>
-            {startMultiQuestions.map(q => (
-              <div key={`multi-${q}`} className='bg-[#1b1f22] border border-gray-700 rounded-md p-4'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3'>
-                    <div className='text-white font-[600]'>{q}-savol</div>
+            {questionsOrder.map((originalQ, orderIdx) => {
+              const count = multiCounts[originalQ] ?? 0
+              const values = multiValues[originalQ] || []
+              const displayNumber = 36 + orderIdx
+              return (
+                <div key={`multi-${originalQ}`} className='bg-[#1b1f22] border border-gray-700 rounded-md p-4'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-3'>
+                      <div className='text-white font-[600]'>{displayNumber}-savol</div>
 
-                    <div className='flex items-center gap-2'>
-                      <button
-                        onClick={() => increaseCount(q)}
-                        className='w-8 h-8 rounded-md bg-[#7c3aed] text-white flex items-center justify-center text-lg shadow'
-                        disabled={(multiCounts[q] ?? 1) >= 45}
-                      >
-                        +
-                      </button>
-                      <button
-                        onClick={() => decreaseCount(q)}
-                        className='w-8 h-8 rounded-md bg-[#ef4444] text-white flex items-center justify-center text-lg shadow'
-                        disabled={(multiCounts[q] ?? 1) <= 1}
-                      >
-                        -
-                      </button>
+                      <div className='flex items-center gap-2'>
+                        <button
+                          onClick={() => increaseCount(originalQ)}
+                          className='w-8 h-8 rounded-md bg-[#7c3aed] text-white flex items-center justify-center text-lg shadow'
+                          disabled={(count) >= 45}
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => decreaseCount(originalQ)}
+                          className='w-8 h-8 rounded-md bg-[#ef4444] text-white flex items-center justify-center text-lg shadow'
+                          disabled={(count) <= 0}
+                        >
+                          -
+                        </button>
+                      </div>
                     </div>
+
+                    <div className='text-sm text-gray-300'>Jami: {count}</div>
                   </div>
 
-                  <div className='text-sm text-gray-300'>Jami: {multiCounts[q] ?? 1}</div>
+                  <div className='mt-4 space-y-3'>
+                    {count > 0 ? (
+                      Array.from({ length: count }, (_, idx) => (
+                        <div key={`${originalQ}-${idx}`} className='flex items-center gap-3'>
+                          <div className='w-[26px] text-white text-[14px] font-[600]'>{idx + 1})</div>
+                          <input
+                            value={values[idx] ?? ''}
+                            onChange={(e) => handleMultiValueChange(originalQ, idx, e.target.value)}
+                            placeholder='JAVOBNI KIRITIG'
+                            className={`w-full h-[42px] px-3 uppercase rounded-[6px] border 
+                              ${errors[`${originalQ}-${idx}`] ? 'border-red-500' : 'border-gray-600'} 
+                              bg-[#242f34] text-white placeholder:text-gray-400`}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div className='text-gray-400 italic'>Javoblar mavjud emas</div>
+                    )}
+                  </div>
                 </div>
-
-                <div className='mt-4 space-y-3'>
-                  {Array.from({ length: multiCounts[q] ?? 1 }, (_, idx) => (
-                    <div key={`${q}-${idx}-${Date.now()}`} className='flex items-center gap-3'>
-                      <div className='w-[26px] text-white text-[14px] font-[600]'>{idx + 1})</div>
-                      <input
-                        value={(multiValues[q] && multiValues[q][idx]) ?? ''}
-                        onChange={(e) => handleMultiValueChange(q, idx, e.target.value)}
-                        placeholder='JAVOBNI KIRITIG'
-                        className={`w-full h-[42px] px-3 rounded-[6px] border 
-                          ${errors[`${q}-${idx}`] ? 'border-red-500' : 'border-gray-600'} 
-                          bg-[#242f34] text-white placeholder:text-gray-400`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <button

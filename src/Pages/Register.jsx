@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { User, Phone, MapPin, Building } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import register from "../Services/register";
+import get_user from "../Services/get_user";
+import update_user from "../Services/update_user";
+import { Building, MapPin, Phone, User } from "lucide-react";
 
 const Register = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -13,7 +16,9 @@ const Register = () => {
     region: "",
     district: "",
     id: 0
-  })
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const regions = {
     Toshkent: [
@@ -235,17 +240,69 @@ const Register = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Saqlash: localStorage ga yozamiz
-    localStorage.setItem("userProfile", JSON.stringify(formData))
-    // Tahrirlashdan keyin profilga qaytamiz, aks holda bosh sahifaga
-    if (isEditing) {
-      navigate("/profile")
-    } else {
-      navigate("/")
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      let response;
+      
+      if (isEditing) {
+        // Update existing user
+        response = await update_user(formData.id, formData);
+      } else {
+        // Register new user
+        response = await register(formData);
+        
+        // If registration fails due to existing user
+        if (error.response?.status === 400 && error.response?.data?.telegram_id) {
+          try {
+            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            const userData = await get_user(Number(telegramId));
+            
+            if (userData.length > 0) {
+              const user = userData[0];
+              localStorage.setItem("userProfile", JSON.stringify({
+                firstName: user.name || "",
+                lastName: user.surname || "",
+                middleName: user.father_name || "",
+                phone: user.phone || "+998",
+                region: user.region || "",
+                district: user.district || "",
+                id: user.id,
+                telegram_id: user.telegram_id
+              }));
+              
+              navigate("/");
+              return;
+            }
+          } catch (fetchError) {
+            console.error("Failed to fetch existing user:", fetchError);
+          }
+        }
+      }
+
+      // Save updated/created user data to localStorage
+      localStorage.setItem("userProfile", JSON.stringify({
+        ...formData,
+        id: response.id,
+        telegram_id: response.telegram_id
+      }));
+      
+      // Navigate based on editing mode
+      navigate(isEditing ? "/profile" : "/");
+
+    } catch (error) {
+      console.error(isEditing ? "Update failed:" : "Registration failed:", error);
+      setError(isEditing ? 
+        "Ma'lumotlarni yangilashda xatolik yuz berdi" : 
+        "Ro'yxatdan o'tishda xatolik yuz berdi"
+      );
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="w-full p-4.5 -mb-30">
@@ -363,11 +420,25 @@ const Register = () => {
             </div>
           </div>
 
+          {error && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold hover:from-[#357abd] hover:to-[#2968a3] transition-all duration-200 mt-6 shadow-lg"
+            disabled={loading}
+            className={`w-full bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold 
+              ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:from-[#357abd] hover:to-[#2968a3]'} 
+              transition-all duration-200 mt-6 shadow-lg`}
           >
-            {isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <span>Yuklanmoqda...</span>
+              </div>
+            ) : (
+              isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"
+            )}
           </button>
         </form>
       </div>
