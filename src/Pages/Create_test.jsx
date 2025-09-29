@@ -323,12 +323,21 @@ const Create_test = () => {
           console.error('Selected subject not found');
           return;
         }
+
+        let formattedDate = null;
+        if (isChecked && testDate) {
+          const date = new Date(testDate);
+          formattedDate = date.toISOString().slice(0, -1) + "+05:00";
+        }
+
         await create_test(
           formattedAnswers,
           selectedSubjectData,
           isChecked,
-          isChecked ? channelUsername : null
+          isChecked ? channelUsername : null,
+          formattedDate
         );
+        
         window.location.href = "/"
       } catch (error) {
         console.error('Failed to create test:', error);
