@@ -34,12 +34,15 @@ const Create_test = () => {
   // order of questions (allows moving a "removed" question to the end)
   const [questionsOrder, setQuestionsOrder] = useState([...startMultiQuestions])
 
+  // Initial state setup for multiCounts and multiValues
+  // Initialize with count 1 instead of 0
   const [multiCounts, setMultiCounts] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 0 }), {})
+    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 1 }), {})
   )
 
+  // Initialize with one empty string for each question
   const [multiValues, setMultiValues] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: [] }), {})
+    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: [''] }), {})
   )
 
   // Synchronize multiValues with multiCounts to ensure length matches
