@@ -2,7 +2,7 @@ import { API } from "./base";
 
 const register = (payload) => {
   const data = {
-    telegram_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 534534,
+    telegram_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
     username: window.Telegram?.WebApp?.initDataUnsafe?.user?.username || "",
     surname: payload.lastName,
     name: payload.firstName,
@@ -15,7 +15,6 @@ const register = (payload) => {
     is_banned: false,
     is_admin: false,
   };
-  console.log(data);
   return API.post("/api/users/", data).then((res) => res.data);
 };
 
