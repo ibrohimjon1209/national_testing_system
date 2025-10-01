@@ -1,7 +1,9 @@
 import { CircleCheck, Loader2, CheckCircle } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { redirect, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import get_subject_tests from '../Services/get_test'
+import check_answers from '../Services/check_answers';
 
 const Send_test = () => {
   const [isFind, setIsFind] = useState(false)
@@ -10,6 +12,8 @@ const Send_test = () => {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [testData, setTestData] = useState(null)
+  const [apiError, setApiError] = useState(null)
   const navigate = useNavigate();
 
 const handleInputChange = (e) => {
@@ -23,14 +27,53 @@ const handleInputChange = (e) => {
   }
 }
 
-const handleIsFind = () => {
+const handleIsFind = async () => {
   if (/^\d+$/.test(inputValue)) {
     setLoading(true)
     setIsError(false)
-    setTimeout(() => {
+    setApiError(null)
+    
+    try {
+      const data = await get_subject_tests(inputValue)
+      
+      // Check if test is active
+      if (!data.is_active) {
+        setApiError("Bu test endi aktiv emas!")
+        setIsFind(false)
+        return
+      }
+      
+      // Check if test has started
+      if (data.start_time) {
+        const startTime = new Date(data.start_time)
+        if (startTime > new Date()) {
+          setApiError("Test hali boshlanmagan!")
+          setIsFind(false)
+          return
+        }
+      }
+
+      setTestData(data)
       setIsFind(true)
+      
+      // Initialize multiValues based on actual data
+      const multiQuestions = Object.keys(data.answers)
+        .filter(q => parseInt(q) >= 36)
+        .map(q => parseInt(q))
+      
+      setMultiValues(
+        multiQuestions.reduce((acc, q) => ({
+          ...acc,
+          [q]: Array(Object.keys(data.answers[q]).length).fill('')
+        }), {})
+      )
+
+    } catch (err) {
+      setApiError("Test topilmadi yoki xatolik yuz berdi")
+      setIsFind(false)
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   } else {
     setIsFind(false)
     setIsError(true)
@@ -39,55 +82,26 @@ const handleIsFind = () => {
 
   const [answers, setAnswers] = useState({})
   const [errors, setErrors] = useState({})
-  const startMultiQuestions = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
 
-  const [multiCounts, setMultiCounts] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: 1 }), {})
-  )
+  const [multiCounts, setMultiCounts] = useState({})
+  const [multiValues, setMultiValues] = useState({})
 
-  const [multiValues, setMultiValues] = useState(
-    startMultiQuestions.reduce((acc, q) => ({ ...acc, [q]: [''] }), {})
-  )
-
-  const increaseCount = (question) => {
-    setMultiCounts(prev => {
-      const curr = prev[question] ?? 1
-      if (curr >= 45) return prev
-      const next = { ...prev, [question]: curr + 1 }
-      setMultiValues(vals => {
-        const arr = vals[question] ? [...vals[question]] : []
-        arr.push('')
-        return { ...vals, [question]: arr }
-      })
-      return next
-    })
-  }
-
-  const decreaseCount = (question) => {
-    setMultiCounts(prev => {
-      const curr = prev[question] ?? 1
-      if (curr <= 1) return prev
-      const next = { ...prev, [question]: curr - 1 }
-      setMultiValues(vals => {
-        const arr = vals[question] ? [...vals[question]] : []
-        arr.pop()
-        return { ...vals, [question]: arr.length ? arr : [''] }
-      })
-      return next
-    })
-  }
-
+  // Update handleMultiValueChange to convert input to uppercase
   const handleMultiValueChange = (question, idx, value) => {
     setMultiValues(prev => {
       const arr = prev[question] ? [...prev[question]] : []
-      arr[idx] = value
+      arr[idx] = value.toUpperCase() // Convert to uppercase
       return { ...prev, [question]: arr }
     })
 
-    setErrors(prev => ({
-      ...prev,
-      [`${question}-${idx}`]: !value.trim()
-    }))
+    // Remove validation error when typing
+    if (errors[`${question}-${idx}`]) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[`${question}-${idx}`]
+        return newErrors
+      })
+    }
   }
 
   const renderOptions = (questionNumber) => {
@@ -119,23 +133,45 @@ const handleIsFind = () => {
     }))
   }
 
-  const handleCreate = () => {
-    let newErrors = {}
-    startMultiQuestions.forEach(q => {
-      multiValues[q].forEach((value, idx) => {
-        if (!value.trim()) {
-          newErrors[`${q}-${idx}`] = true
-        }
-      })
-    })
-    setErrors(newErrors)
+  // Update handleCreate to only include filled answers
+  const handleCreate = async () => {
+    setSubmitting(true);
+    
+    try {
+      // Format answers - only include non-empty answers
+      const userAnswers = {
+        // Standard answers (1-35) - only include answered questions
+        ...Object.fromEntries(
+          Object.entries(answers).filter(([_, value]) => value)
+        ),
+        
+        // Multi-answers (36+) - only include questions with at least one answer
+        ...Object.entries(multiValues)
+          .filter(([_, values]) => values.some(v => v.trim()))
+          .reduce((acc, [question, values]) => {
+            const answerObj = values.reduce((obj, value, idx) => {
+              if (value.trim()) {
+                obj[(idx + 1).toString()] = value.toUpperCase();
+              }
+              return obj;
+            }, {});
+            
+            if (Object.keys(answerObj).length > 0) {
+              acc[question] = answerObj;
+            }
+            return acc;
+          }, {})
+      };
 
-    if (Object.keys(newErrors).length === 0) {
-      setSubmitting(true)
-      setTimeout(() => {
-        setSubmitting(false)
-        setSubmitted(true)
-      }, 1000)
+      const result = await check_answers(inputValue, userAnswers);
+      console.log(result)
+      setSubmitting(false);
+      setSubmitted(true);
+      
+    } catch (error) {
+      console.error('Failed to check answers:', error);
+      setApiError("Javoblarni tekshirishda xatolik yuz berdi");
+      setSubmitting(false);
     }
   }
 
@@ -150,7 +186,7 @@ const handleIsFind = () => {
   return (
     <div className='w-full h-full relative'>
       <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center gradient-primary shadow-modern-lg z-10">
-        <h1 className="text-white font-bold text-[30px] text-center px-6 leading-tight">MS testni yuborish</h1>
+        <h1 className="text-white font-bold text-[30px] text-center px-6 leading-tight">{testData?.subject_name || "MS"} testni yuborish</h1>
       </div>
 
       <div className='w-full h-full px-[25px]'>
@@ -170,6 +206,11 @@ const handleIsFind = () => {
               ${isError ? 'border-red-500 placeholder:text-red-500' : 'border-white'}
             `}
           />
+          {apiError && (
+            <div className="mt-2 text-red-500 text-sm">
+              {apiError}
+            </div>
+          )}
         </div>
 
         <button
@@ -203,7 +244,7 @@ const handleIsFind = () => {
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 32 }, (_, index) => (
+                {testData && Array.from({ length: Math.min(32, testData.questions_count) }, (_, index) => (
                   <tr key={index + 1} className='h-[40px] font-[600]'>
                     <td className='border border-gray-600 px-2 text-center'>{index + 1}</td>
                     {renderOptions(index + 1)}
@@ -221,7 +262,7 @@ const handleIsFind = () => {
               </tr>
 
               <tbody>
-                {Array.from({ length: 3 }, (_, index) => (
+                {testData && Array.from({ length: Math.min(3, testData.questions_count - 32) }, (_, index) => (
                   <tr key={index + 1} className='h-[40px] font-[600]'>
                     <td className='border border-gray-600 px-2 text-center'>{index + 33}</td>
                     {renderOptions(index + 33)}
@@ -231,50 +272,36 @@ const handleIsFind = () => {
             </table>
 
             <div className='mt-[16px] space-y-6'>
-              {startMultiQuestions.map(q => (
-                <div key={`multi-${q}`} className='bg-[#1b1f22] border border-gray-700 rounded-md p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                      <div className='text-white font-[600]'>{q}-savol</div>
-
-                      <div className='flex items-center gap-2'>
-                        <button
-                          onClick={() => increaseCount(q)}
-                          className='w-8 h-8 rounded-md bg-[#7c3aed] text-white flex items-center justify-center text-lg shadow'
-                          disabled={(multiCounts[q] ?? 1) >= 45}
-                        >
-                          +
-                        </button>
-                        <button
-                          onClick={() => decreaseCount(q)}
-                          className='w-8 h-8 rounded-md bg-[#ef4444] text-white flex items-center justify-center text-lg shadow'
-                          disabled={(multiCounts[q] ?? 1) <= 1}
-                        >
-                          -
-                        </button>
+              {testData && Object.entries(testData.answers)
+                .filter(([q]) => parseInt(q) >= 36)
+                .map(([q, answers]) => (
+                  <div key={`multi-${q}`} className='bg-[#1b1f22] border border-gray-700 rounded-md p-4'>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-3'>
+                        <div className='text-white font-[600]'>{q}-savol</div>
                       </div>
+                      <div className='text-sm text-gray-300'>Jami: {Object.keys(answers).length}</div>
                     </div>
 
-                    <div className='text-sm text-gray-300'>Jami: {multiCounts[q] ?? 1}</div>
+                    <div className='mt-4 space-y-3'>
+                      {Object.keys(answers).map((answerKey, idx) => (
+                        <div key={`${q}-${idx}`} className='flex items-center gap-3'>
+                          <div className='w-[26px] text-white text-[14px] font-[600]'>{answerKey})</div>
+                          {/* Update the input field to show uppercase letters */}
+                          <input
+                            value={(multiValues[q] && multiValues[q][idx]) ?? ''}
+                            onChange={(e) => handleMultiValueChange(q, idx, e.target.value.toUpperCase())}
+                            placeholder='JAVOBNI KIRITING'
+                            style={{ textTransform: 'uppercase' }}
+                            className={`w-full h-[42px] px-3 rounded-[6px] border 
+                              ${errors[`${q}-${idx}`] ? 'border-red-500' : 'border-gray-600'} 
+                              bg-[#242f34] text-white placeholder:text-gray-400`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <div className='mt-4 space-y-3'>
-                    {Array.from({ length: multiCounts[q] ?? 1 }, (_, idx) => (
-                      <div key={`${q}-${idx}`} className='flex items-center gap-3'>
-                        <div className='w-[26px] text-white text-[14px] font-[600]'>{idx + 1})</div>
-                        <input
-                          value={(multiValues[q] && multiValues[q][idx]) ?? ''}
-                          onChange={(e) => handleMultiValueChange(q, idx, e.target.value)}
-                          placeholder='JAVOBNI KIRITIG'
-                          className={`w-full h-[42px] px-3 rounded-[6px] border 
-                            ${errors[`${q}-${idx}`] ? 'border-red-500' : 'border-gray-600'} 
-                            bg-[#242f34] text-white placeholder:text-gray-400`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             <button

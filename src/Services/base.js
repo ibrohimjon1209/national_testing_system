@@ -1,9 +1,22 @@
 import axios from "axios";
 
-export const API = axios.create({
+const API = axios.create({
   baseURL: "https://mukhriddin043.pythonanywhere.com",
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
+
+API.interceptors.request.use(
+  (config) => {
+    const initData = window.Telegram?.WebApp?.initData;
+
+    if (initData) {
+      config.headers["Telegram-Init-Data"] = initData;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export { API };

@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Subject_list from "./Pages/Subject_list";
 import Create_test from "./Pages/Create_test";
@@ -7,39 +7,88 @@ import Navbar from "./Pages/Navbar";
 import Single_subject from "./Pages/Single_subject";
 import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
+import get_user from "./Services/get_user";
 
 const App = () => {
   const location = useLocation();
-  const [isFirstTime, setIsFirstTime] = useState(true);
+  const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const isEditing = !!location.state?.userProfile;
 
   useEffect(() => {
-    const checkTelegramWebApp = () => {
-      setIsTelegramWebApp(true)
-      // if (window.Telegram && window.Telegram.WebApp) {
-      //   setIsTelegramWebApp(true);
-      //   window.Telegram.WebApp.ready();
-      // } else {
-      //   setTimeout(() => {
-      //     window.location.href = "https://t.me/milliy_test_sertifikat_bot";
-      //   }, 5000);
-      // }
-    };
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
-    const checkUserProfile = () => {
-      const profile = localStorage.getItem("userProfile");
-      setIsFirstTime(!profile);
-    };
+    console.log("UserAgent:", userAgent);
 
-    checkTelegramWebApp();
-    checkUserProfile();
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.expand();
+      window.Telegram.WebApp.ready();
+      setIsTelegramWebApp(true);
+    } else if (/TelegramDesktop/i.test(userAgent)) {
+      setIsTelegramWebApp(true);
+    } else {
+      window.location.href = "https://t.me/nsd_corporation";
+    }
+
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    if (isTelegramWebApp && isFirstTime && location.pathname === "/") {
-      window.location.replace("/register");
-    }
-  }, [isFirstTime, location.pathname, isTelegramWebApp]);
+    const checkTelegramUser = async () => {
+      if (!isTelegramWebApp) return;
+
+      const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
+      if (!telegramId) {
+        console.error("Telegram user ID not found");
+        return;
+      }
+
+      try {
+        const userData = await get_user(Number(telegramId));
+        if (userData?.data) {
+          const user = userData.data;
+          localStorage.setItem(
+            "userProfile",
+            JSON.stringify({
+              firstName: user.name || "",
+              lastName: user.surname || "",
+              middleName: user.father_name || "",
+              phone: user.phone || "+998",
+              region: user.region || "",
+              district: user.district || "",
+              id: user.id,
+              telegram_id: user.telegram_id,
+            })
+          );
+          if (location.pathname === "/register") {
+            navigate("/");
+          }
+        } else {
+          if (location.pathname !== "/register") {
+            navigate("/register");
+          }
+        }
+      } catch (error) {
+        if (location.pathname !== "/register") {
+          navigate("/register");
+        }
+        console.error("Failed to fetch user:", error);
+      }
+    };
+
+    checkTelegramUser();
+  }, [isTelegramWebApp, location.pathname, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
+        <h1 className="text-2xl font-bold mb-4">Yuklanmoqda...</h1>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
+      </div>
+    );
+  }
 
   if (!isTelegramWebApp) {
     return (
@@ -47,7 +96,7 @@ const App = () => {
         <h1 className="text-2xl font-bold mb-4">
           Bu sayt faqat Telegram Web App uchun
         </h1>
-        <p className="mb-6 text-xl">Yo'naltirilmoqda...</p>
+        <p className="mb-6 text-xl">Telegram botga yo'naltirilmoqda...</p>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
@@ -70,10 +119,9 @@ const App = () => {
             }
           />
         </Routes>
-
         <div className=""></div>
       </div>
-      <div className="fixed w-full mt-[90vh] ">
+      <div className="fixed w-full mt-[90vh]">
         {location.pathname !== "/sign_in" &&
           location.pathname !== "/404" &&
           location.pathname !== "/register" && <Navbar />}

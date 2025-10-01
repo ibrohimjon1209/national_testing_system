@@ -1,25 +1,37 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import get_subjects from "../Services/get_subjects";
+import get_subject_tests from "../Services/get_subject_tests";
 
 const Subject_list = () => {
-  const [subjects, set_subjects] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [testsCount, setTestsCount] = useState({});
 
   useEffect(() => {
-    const fetch_subjects = async () => {
+    const fetchSubjectsAndTests = async () => {
       setLoading(true);
       try {
         const data = await get_subjects();
-        set_subjects(data.results || []);
+        const subjectsList = data.results || [];
+        setSubjects(subjectsList);
+
+        // Fetch tests for each subject
+        const counts = {};
+        for (const subject of subjectsList) {
+          const tests = await get_subject_tests(subject.id);
+          counts[subject.id] = tests.filter((test) => test.is_public).length;
+        }
+        setTestsCount(counts);
       } catch (e) {
-        console.error("Failed to fetch subjects", e);
-        set_subjects([]);
+        console.error("Failed to fetch data", e);
+        setSubjects([]);
       } finally {
         setLoading(false);
       }
     };
-    fetch_subjects();
+
+    fetchSubjectsAndTests();
   }, []);
 
   return (
@@ -38,8 +50,8 @@ const Subject_list = () => {
                 <h1 className="font-inter font-[600] text-[17px] text-white">
                   {subject.name}
                 </h1>
-                <button className=" w-[60px] h-[40px] rounded-[10px] bg-[#4a90e2] text-white font-[600] font-inter active:bg-[#357abd]">
-                  {subject.tests_count} ta
+                <button className="w-[60px] h-[40px] rounded-[10px] bg-[#4a90e2] text-white font-[600] font-inter active:bg-[#357abd]">
+                  {testsCount[subject.id] || 0} ta
                 </button>
               </div>
               <div className="w-full h-full px-[15px]">
@@ -61,13 +73,13 @@ const Subject_list = () => {
         <div className="w-full h-[13px] rounded-[5px] bg-[#2d3a42]"></div>
       </div>
       {loading && (
-          <div className="flex mt-20 items-center justify-center">
-      <div className="text-white text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2] mx-auto mb-4"></div>
-        <p>Yuklanmoqda...</p>
-      </div>
-    </div>
-        )}
+        <div className="flex mt-20 items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2] mx-auto mb-4"></div>
+            <p>Yuklanmoqda...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
