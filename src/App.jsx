@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Subject_list from "./Pages/Subject_list";
 import Create_test from "./Pages/Create_test";
@@ -11,60 +11,76 @@ import get_user from "./Services/get_user";
 
 const App = () => {
   const location = useLocation();
-  const [isFirstTime, setIsFirstTime] = useState(true);
+  const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const isEditing = !!location.state?.userProfile;
 
   useEffect(() => {
-    const checkTelegramWebApp = async () => {
-      if (window.Telegram?.WebApp) {
-        setIsTelegramWebApp(true);
-        window.Telegram.WebApp.ready();
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
-        const telegramId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+    console.log("UserAgent:", userAgent);
 
-        if (!telegramId) {
-          console.error("Telegram user ID not found");
-          return;
-        }
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.expand();
+      window.Telegram.WebApp.ready();
+      setIsTelegramWebApp(true);
+    } else if (/TelegramDesktop/i.test(userAgent)) {
+      setIsTelegramWebApp(true);
+    } else {
+      window.location.href = "https://t.me/nsd_corporation";
+    }
 
-        try {
-          const userData = await get_user(Number(telegramId));
-          if (userData) {
-            const user = userData.data;
-            localStorage.setItem(
-              "userProfile",
-              JSON.stringify({
-                firstName: user.name || "",
-                lastName: user.surname || "",
-                middleName: user.father_name || "",
-                phone: user.phone || "+998",
-                region: user.region || "",
-                district: user.district || "",
-                id: user.id,
-                telegram_id: user.telegram_id,
-              })
-            );
-            setIsFirstTime(false);
-            if (!isEditing && location.pathname === "/register") {
-              window.location.replace("/");
-            }
-          }
-        } catch (error) {
-          console.error("Failed to fetch user:", error);
-        }
-      } else {
-        // If not in Telegram WebApp, redirect after 3 seconds
-        window.location.href = "https://t.me/milliy_test_sertifikat_bot";
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const checkTelegramUser = async () => {
+      if (!isTelegramWebApp) return;
+
+      const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
+      if (!telegramId) {
+        console.error("Telegram user ID not found");
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        const userData = await get_user(Number(telegramId));
+        if (userData?.data) {
+          const user = userData.data;
+          localStorage.setItem(
+            "userProfile",
+            JSON.stringify({
+              firstName: user.name || "",
+              lastName: user.surname || "",
+              middleName: user.father_name || "",
+              phone: user.phone || "+998",
+              region: user.region || "",
+              district: user.district || "",
+              id: user.id,
+              telegram_id: user.telegram_id,
+            })
+          );
+          if (location.pathname === "/register") {
+            navigate("/");
+          }
+        } else {
+          if (location.pathname !== "/register") {
+            navigate("/register");
+          }
+        }
+      } catch (error) {
+        if (location.pathname !== "/register") {
+          navigate("/register");
+        }
+        console.error("Failed to fetch user:", error);
+      }
     };
 
-    checkTelegramWebApp();
-  }, [location.pathname, isEditing]);
+    checkTelegramUser();
+  }, [isTelegramWebApp, location.pathname, navigate]);
 
-  // Show loading screen while checking
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
@@ -74,7 +90,6 @@ const App = () => {
     );
   }
 
-  // Show redirect message if not in Telegram
   if (!isTelegramWebApp) {
     return (
       <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
@@ -87,7 +102,6 @@ const App = () => {
     );
   }
 
-  // Main app content
   return (
     <div className="flex flex-col h-auto justify-between items-center overflow-hidden overflow-y-auto">
       <div className="w-full h-full pb-[130px] bg-[#0f1419] mx-auto flex flex-col items-center justify-between">

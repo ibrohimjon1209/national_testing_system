@@ -4,10 +4,12 @@ import register from "../Services/register";
 import get_user from "../Services/get_user";
 import update_user from "../Services/update_user";
 import { Building, MapPin, Phone, User } from "lucide-react";
+import get_subjects from "../Services/get_subjects";
 
 const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [s, ss] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -15,7 +17,7 @@ const Register = () => {
     phone: "+998",
     region: "",
     district: "",
-    id: 0
+    id: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -180,7 +182,16 @@ const Register = () => {
       "Toyloq",
       "Urgut",
     ],
-    Sirdaryo: ["Boyovut", "Guliston", "Mirzaobod", "Oqoltin", "Sardoba", "Sayxunobod", "Sirdaryo", "Xovos"],
+    Sirdaryo: [
+      "Boyovut",
+      "Guliston",
+      "Mirzaobod",
+      "Oqoltin",
+      "Sardoba",
+      "Sayxunobod",
+      "Sirdaryo",
+      "Xovos",
+    ],
     Surxondaryo: [
       "Angor",
       "Bandixon",
@@ -210,35 +221,44 @@ const Register = () => {
       "Yashnobod",
       "Yunusobod",
     ],
-  }
-
-  // Agar Profile sahifasidan redirect bo'lsa yoki localStorage da userProfile bo'lsa,
-  // formni boshlang'ich qiymatlar bilan to'ldiramiz.
+  };
   useEffect(() => {
-    const profileFromState = location.state?.userProfile
+    const fetchSubjectsAndTests = async () => {
+      try {
+        const data = await get_subjects();
+        const subjectsList = data.results || ["not found"];
+        ss(subjectsList);
+      } catch (e) {
+        ss(error)
+        console.error("Failed to fetch data", e);
+      }
+    };
+
+    fetchSubjectsAndTests();
+  }, []);
+
+  useEffect(() => {
+    const profileFromState = location.state?.userProfile;
     if (profileFromState) {
-      setFormData((prev) => ({ ...prev, ...profileFromState }))
-      return
+      setFormData((prev) => ({ ...prev, ...profileFromState }));
+      return;
     }
 
-    const stored = localStorage.getItem("userProfile")
+    const stored = localStorage.getItem("userProfile");
     if (stored) {
       try {
-        const parsed = JSON.parse(stored)
-        setFormData((prev) => ({ ...prev, ...parsed }))
-      } catch (e) {
-        // invalid JSON -> ignore
-      }
+        const parsed = JSON.parse(stored);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+      } catch (e) {}
     }
-  }, [location.state])
+  }, [location.state]);
 
-  // editing flag: agar Profile dan kelgan bo'lsa tahrirlash rejimi
-  const isEditing = !!location.state?.userProfile
+  const isEditing = !!location.state?.userProfile;
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -247,23 +267,39 @@ const Register = () => {
 
     try {
       let response;
-      
+
       if (isEditing) {
-        // Update existing user
         response = await update_user(formData.id, formData);
       } else {
-        // Register new user
         response = await register(formData);
-        
-        // If registration fails due to existing user
-        if (error.response?.status === 400 && error.response?.data?.telegram_id) {
-          try {
-            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-            const userData = await get_user(Number(telegramId));
-            
-            if (userData.length > 0) {
-              const user = userData[0];
-              localStorage.setItem("userProfile", JSON.stringify({
+      }
+
+      localStorage.setItem(
+        "userProfile",
+        JSON.stringify({
+          ...formData,
+          id: response.id,
+          telegram_id: response.telegram_id,
+        })
+      );
+
+      navigate(isEditing ? "/profile" : "/");
+    } catch (error) {
+      console.error(
+        isEditing ? "Update failed:" : "Registration failed:",
+        error
+      );
+
+      if (error?.response?.status === 400) {
+        try {
+          const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+          const userData = await get_user(telegramId);
+
+          if (userData?.data) {
+            const user = userData.data;
+            localStorage.setItem(
+              "userProfile",
+              JSON.stringify({
                 firstName: user.name || "",
                 lastName: user.surname || "",
                 middleName: user.father_name || "",
@@ -271,34 +307,25 @@ const Register = () => {
                 region: user.region || "",
                 district: user.district || "",
                 id: user.id,
-                telegram_id: user.telegram_id
-              }));
-              
-              navigate("/");
-              return;
-            }
-          } catch (fetchError) {
-            console.error("Failed to fetch existing user:", fetchError);
+                telegram_id: user.telegram_id,
+              })
+            );
+
+            navigate("/");
+            return;
           }
+        } catch (fetchError) {
+          console.error("Failed to fetch existing user:", fetchError);
+          setError("Foydalanuvchi ma'lumotlarini olishda xatolik yuz berdi");
         }
+      } else {
+        alert(error)
+        setError(
+          isEditing
+            ? "Ma'lumotlarni yangilashda xatolik yuz berdi"
+            : `Ro'yxatdan o'tishda xatolik yuz berdi`
+        );
       }
-
-      // Save updated/created user data to localStorage
-      localStorage.setItem("userProfile", JSON.stringify({
-        ...formData,
-        id: response.id,
-        telegram_id: response.telegram_id
-      }));
-      
-      // Navigate based on editing mode
-      navigate(isEditing ? "/profile" : "/");
-
-    } catch (error) {
-      console.error(isEditing ? "Update failed:" : "Registration failed:", error);
-      setError(isEditing ? 
-        "Ma'lumotlarni yangilashda xatolik yuz berdi" : 
-        "Ro'yxatdan o'tishda xatolik yuz berdi"
-      );
     } finally {
       setLoading(false);
     }
@@ -318,7 +345,9 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Ism</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Ism
+            </label>
             <input
               type="text"
               name="firstName"
@@ -331,7 +360,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Familiya</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Familiya
+            </label>
             <input
               type="text"
               name="lastName"
@@ -344,7 +375,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Sharif</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Sharif
+            </label>
             <input
               type="text"
               name="middleName"
@@ -357,7 +390,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Telefon raqam</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Telefon raqam
+            </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -373,7 +408,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Viloyat</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Viloyat
+            </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
@@ -387,7 +424,11 @@ const Register = () => {
                   Viloyatni tanlang
                 </option>
                 {Object.keys(regions).map((region) => (
-                  <option key={region} value={region} className="bg-[#1a2328] text-white">
+                  <option
+                    key={region}
+                    value={region}
+                    className="bg-[#1a2328] text-white"
+                  >
                     {region}
                   </option>
                 ))}
@@ -396,7 +437,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Tuman</label>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Tuman
+            </label>
             <div className="relative">
               <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
@@ -412,7 +455,11 @@ const Register = () => {
                 </option>
                 {formData.region &&
                   regions[formData.region]?.map((district) => (
-                    <option key={district} value={district} className="bg-[#1a2328] text-white">
+                    <option
+                      key={district}
+                      value={district}
+                      className="bg-[#1a2328] text-white"
+                    >
                       {district}
                     </option>
                   ))}
@@ -428,7 +475,11 @@ const Register = () => {
             type="submit"
             disabled={loading}
             className={`w-full bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold 
-              ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:from-[#357abd] hover:to-[#2968a3]'} 
+              ${
+                loading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:from-[#357abd] hover:to-[#2968a3]"
+              } 
               transition-all duration-200 mt-6 shadow-lg`}
           >
             {loading ? (
@@ -436,14 +487,16 @@ const Register = () => {
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 <span>Yuklanmoqda...</span>
               </div>
+            ) : isEditing ? (
+              "Tahrirlash"
             ) : (
-              isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"
+              "Ro'yhatdan o'tish"
             )}
           </button>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;
