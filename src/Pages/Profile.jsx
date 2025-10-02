@@ -39,72 +39,68 @@ const Profile = () => {
   }
 
   return (
-      <div className="w-full h-full">
-        <div className="bg-[#2d3a4] rounded-b-2xl h-full shadow-modern-lg overflow-hidden">
-          {/* Header */}
-          <div className="header sticky top-0 w-full h-full py-10 flex flex-col items-center justify-center gradient-primary shadow-modern-lg z-10">
-            <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg">
-              {telegramPhoto ? (
-                <img
-                  src={telegramPhoto || "/placeholder.svg"}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-white flex items-center justify-center">
-                  <User className="w-12 h-12 text-[#4a90e2]" />
-                </div>
-              )}
-            </div>
-            <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight">
-              {userProfile.firstName} {userProfile.lastName}
-            </h1>
-            <p className="text-white/80 text-sm">{userProfile.middleName}</p>
+    <div className="w-full h-full">
+      <div className="bg-[#1a2328] h-full overflow-hidden">
+        {/* Header */}
+        <div className="header sticky top-0 w-full h-full py-10 flex flex-col items-center justify-center bg-gradient-to-b from-[-30%] to-[70%] from-[#3579bd] to-[#1a2328] z-10">
+          <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg">
+            {telegramPhoto ? (
+              <img
+                src={telegramPhoto}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-white flex items-center justify-center">
+                <User className="w-12 h-12 text-[#4a90e2]" />
+              </div>
+            )}
           </div>
-          
-          {/* Profile Info */}
-          <div className="p-6 space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
-              <Phone className="w-5 h-5 text-[#4a90e2]" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium">
-                  Telefon raqam
-                </p>
-                <p className="text-white font-semibold">{userProfile.phone}</p>
-              </div>
-            </div>
+          <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight">
+            {userProfile.firstName} {userProfile.lastName}
+          </h1>
+          <p className="text-[#e2e8f0]/80 text-sm">{userProfile.middleName}</p>
+        </div>
 
-            <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
-              <MapPin className="w-5 h-5 text-[#4a90e2]" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium">Viloyat</p>
-                <p className="text-white font-semibold">{userProfile.region}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
-              <Building className="w-5 h-5 text-[#4a90e2]" />
-              <div>
-                <p className="text-xs text-gray-400 font-medium">Tuman</p>
-                <p className="text-white font-semibold">
-                  {userProfile.district}
-                </p>
-              </div>
+        {/* Profile Info */}
+        <div className="p-6 space-y-4">
+          <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
+            <Phone className="w-5 h-5 text-[#4a90e2]" />
+            <div>
+              <p className="text-xs text-[#94a3b8] font-medium">Telefon raqam</p>
+              <p className="text-[#e2e8f0] font-semibold">{userProfile.phone}</p>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="p-6 pt-0">
-            <button
-              onClick={handleEdit}
-              className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold hover:from-[#357abd] hover:to-[#2968a3] transition-all duration-200 shadow-lg"
-            >
-              <Edit className="w-5 h-5" />
-              <span>Ma'lumotlarni tahrirlash</span>
-            </button>
+          <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
+            <MapPin className="w-5 h-5 text-[#4a90e2]" />
+            <div>
+              <p className="text-xs text-[#94a3b8] font-medium">Viloyat</p>
+              <p className="text-[#e2e8f0] font-semibold">{userProfile.region}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3 p-3 bg-[#1a2328] rounded-xl border border-[#3a4a54]">
+            <Building className="w-5 h-5 text-[#4a90e2]" />
+            <div>
+              <p className="text-xs text-[#94a3b8] font-medium">Tuman</p>
+              <p className="text-[#e2e8f0] font-semibold">{userProfile.district}</p>
+            </div>
           </div>
         </div>
+
+        {/* Edit Button */}
+        <div className="p-6 pt-0">
+          <button
+            onClick={handleEdit}
+            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-bl from-[-50%] to-[90%] from-[#3579bd] to-[#1b3b5b] text-white py-3 rounded-xl font-semibold hover:from-[#357abd] hover:to-[#2968a3] transition-all duration-200 shadow-lg"
+          >
+            <Edit className="w-5 h-5" />
+            <span>Ma'lumotlarni tahrirlash</span>
+          </button>
+        </div>
       </div>
+    </div>
   );
 };
 

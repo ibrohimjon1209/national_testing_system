@@ -185,7 +185,7 @@ const handleIsFind = async () => {
 
   return (
     <div className='w-full h-full relative'>
-      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center gradient-primary shadow-modern-lg z-10">
+      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
         <h1 className="text-white font-bold text-[30px] text-center px-6 leading-tight">{testData?.subject_name || "MS"} testni yuborish</h1>
       </div>
 
@@ -216,7 +216,7 @@ const handleIsFind = async () => {
         <button
           onClick={handleIsFind}
           disabled={loading}
-          className='mt-[30px] active:scale-[95%] active:bg-blue-300 gradient-primary shadow-modern-lg z-10 duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]'
+          className='mt-[30px] active:scale-[95%] active:bg-blue-300 bg-gradient-to-bl from-[-50%] to-[90%] from-[#3579bd] to-[#1b3b5b] shadow-modern-lg z-10 duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]'
         >
           {loading ? (
             <Loader2 className='w-5 h-5 animate-spin' />
@@ -307,7 +307,7 @@ const handleIsFind = async () => {
             <button
               onClick={handleCreate}
               disabled={submitting}
-              className='mt-[30px] active:scale-[95%] gradient-primary shadow-modern-lg z-10 duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]'
+              className='mt-[30px] active:scale-[95%] bg-gradient-to-bl from-[-90%] to-[80%] from-[#3579bd] to-[#1b3b5b] shadow-modern-lg z-10 duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]'
             >
               {submitting ? (
                 <Loader2 className='w-5 h-5 animate-spin' />

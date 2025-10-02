@@ -40,7 +40,7 @@ const Single_subject = () => {
 
   return (
     <div className="w-full h-full">
-      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center gradient-primary shadow-modern-lg z-10">
+      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
         <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight">
           {tests[0]?.subject_name || "Fan"} MS Testlar
         </h1>
@@ -78,9 +78,9 @@ const Single_subject = () => {
                 >
                   <div className="w-full h-full flex justify-between items-center pr-[40px]">
                     <div className="w-full h-full  pl-[25px] flex flex-col justify-evenly">
-                      <div className="bg-[#357abd] w-[160px] h-[25px] overflow-hidden rounded-[5px] flex justify-center items-center">
-                        <h1 className="font-inter font-[600] text-[12px] text-white mx-[5px]">
-                          {test.channel_username}
+                      <div className="bg-gradient-to-bl from-[-50%] to-[96%] from-[#3579bd] to-[#1b3b5b] w-[140px] h-[25px] overflow-hidden rounded-[5px] flex justify-center items-center">
+                        <h1 className="font-inter font-[600] text-[12px] max-w-[140] truncate text-white mx-[5px]">
+                          {test.channel_username}sdfasdfasdfasdfasdf
                         </h1>
                       </div>
                       <h1 className="text-white text-[13px]">
@@ -91,7 +91,7 @@ const Single_subject = () => {
                     <div>
                       <button
                         onClick={() => (window.location.href = `https://t.me/${test.channel_username}`)}
-                        className="w-[140px] h-[40px] rounded-[10px] bg-[#4a90e2] text-white font-[600] font-inter active:bg-[#357abd]"
+                        className="w-[140px] h-[40px] rounded-[10px] bg-gradient-to-bl from-[-40%] to-[96%] from-[#3579bd] to-[#1b3b5b] text-white font-[600] font-inter active:bg-[#357abd]"
                       >
                         Kanalga o'tish
                       </button>

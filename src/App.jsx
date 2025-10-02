@@ -62,16 +62,18 @@ const App = () => {
               telegram_id: user.telegram_id,
             })
           );
-          if (location.pathname === "/register") {
+          if (location.pathname === "/register" && !location.state?.userProfile) {
             navigate("/");
           }
         } else {
-          if (location.pathname !== "/register") {
+          const userProfile = localStorage.getItem("userProfile");
+          if (!userProfile && location.pathname !== "/register") {
             navigate("/register");
           }
         }
       } catch (error) {
-        if (location.pathname !== "/register") {
+        const userProfile = localStorage.getItem("userProfile");
+        if (!userProfile && location.pathname !== "/register") {
           navigate("/register");
         }
         console.error("Failed to fetch user:", error);
@@ -79,20 +81,22 @@ const App = () => {
     };
 
     checkTelegramUser();
-  }, [isTelegramWebApp, location.pathname, navigate]);
+  }, [isTelegramWebApp, location.pathname, navigate, location.state?.userProfile]);
 
+  // Loading component o'zgarishi
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
+      <div className="flex flex-col h-screen justify-center items-center bg-[#1a2328] text-[#e2e8f0] text-center p-10">
         <h1 className="text-2xl font-bold mb-4">Yuklanmoqda...</h1>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
   }
 
+  // Telegram Web App warning o'zgarishi
   if (!isTelegramWebApp) {
     return (
-      <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
+      <div className="flex flex-col h-screen justify-center items-center bg-[#1a2328] text-[#e2e8f0] text-center p-10">
         <h1 className="text-2xl font-bold mb-4">
           Bu sayt faqat Telegram Web App uchun
         </h1>
@@ -104,7 +108,7 @@ const App = () => {
 
   return (
     <div className="flex flex-col h-auto justify-between items-center overflow-hidden overflow-y-auto">
-      <div className="w-full h-full pb-[130px] bg-[#0f1419] mx-auto flex flex-col items-center justify-between">
+      <div className="w-full h-full pb-[100px] bg-[#1a2328] mx-auto flex flex-col items-center justify-between">
         <Routes>
           <Route path="/" element={<Subject_list />}></Route>
           <Route path="/register" element={<Register />}></Route>
