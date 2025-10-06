@@ -14,9 +14,17 @@ const App = () => {
   const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const isEditing = !!location.state?.userProfile;
+  const isEditing = localStorage.getItem("is_edit");
 
   useEffect(() => {
+    localStorage.setItem("is_edit", "false");
+  }, []);
+
+  useEffect(() => {
+    const profile = localStorage.getItem("userProfile");
+    if (!profile) {
+      navigate("/register");
+    }
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
     console.log("UserAgent:", userAgent);

@@ -253,7 +253,7 @@ const Register = () => {
     }
   }, [location.state]);
 
-  const isEditing = !!location.state?.userProfile;
+  const isEditing = localStorage.getItem("is_edit");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -261,87 +261,69 @@ const Register = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      let response;
+  try {
+    let response;
 
-      if (isEditing) {
-        try {
-          response = await update_user(formData);
-        } catch (updateError) {
-          // Agar 404 xatosi bo'lsa
-          if (updateError?.response?.status === 404) {
-            // UserProfile ni o'chirish
-            localStorage.removeItem("userProfile");
-            // Registerga qaytarish
-            navigate("/register");
-            return;
-          }
-          throw updateError; // Boshqa xatolar uchun
-        }
-      } else {
-        response = await register(formData);
-      }
+    const telegram_id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
-      localStorage.setItem(
-        "userProfile",
-        JSON.stringify({
-          ...formData,
-          id: response.id,
-          telegram_id: response.telegram_id,
-        })
-      );
+    const existingUser = await get_user(telegram_id);
 
-      navigate(isEditing ? "/profile" : "/");
-    } catch (error) {
-      console.error(
-        isEditing ? "Update failed:" : "Registration failed:",
-        error
-      );
-
-      if (error?.response?.status === 400) {
-        try {
-          const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-          const userData = await get_user(telegramId);
-
-          if (userData?.data) {
-            const user = userData.data;
-            localStorage.setItem(
-              "userProfile",
-              JSON.stringify({
-                firstName: user.name || "",
-                lastName: user.surname || "",
-                middleName: user.father_name || "",
-                phone: user.phone || "+998",
-                region: user.region || "",
-                district: user.district || "",
-                id: user.id,
-                telegram_id: user.telegram_id,
-              })
-            );
-
-            navigate("/");
-            return;
-          }
-        } catch (fetchError) {
-          console.error("Failed to fetch existing user:", fetchError);
-          setError("Foydalanuvchi ma'lumotlarini olishda xatolik yuz berdi");
-        }
-      } else {
-        alert(error);
-        setError(
-          isEditing
-            ? "Ma'lumotlarni yangilashda xatolik yuz berdi"
-            : `Ro'yxatdan o'tishda xatolik yuz berdi`
-        );
-      }
-    } finally {
-      setLoading(false);
+    if (existingUser?.data) {
+      response = await update_user(formData);
+      localStorage.setItem("is_edit", "false");
+    } else {
+      response = await register(formData);
     }
-  };
+
+    localStorage.setItem(
+      "userProfile",
+      JSON.stringify({
+        ...formData,
+        id: response?.id || existingUser?.data?.id,
+        telegram_id: telegram_id,
+      })
+    );
+
+    navigate(existingUser?.data ? "/profile" : "/");
+  } catch (error) {
+    console.error("Xatolik:", error);
+    if (error?.response?.status === 404) {
+      setError("Foydalanuvchi ma'lumotlarini olishda xatolik yuz berdi");
+    }
+
+    if (error?.response?.status === 404) {
+      localStorage.removeItem("userProfile");
+      navigate("/register");
+      window.location.reload();
+    } else if (error?.response?.status === 400) {
+      setError("Foydalanuvchi ma'lumotlarini olishda xatolik yuz berdi");
+    } else {
+      setError(
+        "Ro'yxatdan o'tishda yoki ma'lumotlarni yangilashda xatolik yuz berdi"
+      );
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+  const [tgUser, setTgUser] = useState(null);
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+
+      const user = window.Telegram.WebApp.initDataUnsafe?.user;
+      console.log("Telegram foydalanuvchi ma'lumotlari:", user);
+
+      setTgUser(user || null);
+    } else {
+      alert("Telegram WebApp topilmadi!");
+      console.warn("Telegram WebApp topilmadi!");
+    }
+  }, []);
 
   return (
     <div className="w-full p-4.5 -mb-30">
@@ -351,8 +333,9 @@ const Register = () => {
             <User className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-white text-2xl font-bold mb-4">
-            {isEditing ? "Tahrirlash" : "Ro'yhatdan o'tish"}
+            {isEditing == "true" ? "Tahrirlash" : "Ro'yhatdan o'tish"}
           </h1>
+          user:{tgUser || "not found"}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -484,7 +467,7 @@ const Register = () => {
           )}
 
           <div className="flex space-x-4 mt-6">
-            {isEditing && (
+            {isEditing == "true" && (
               <button
                 type="button"
                 onClick={() => (window.location.href = "/profile")}
@@ -510,7 +493,7 @@ const Register = () => {
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   <span>Yuklanmoqda...</span>
                 </div>
-              ) : isEditing ? (
+              ) : isEditing == "true" ? (
                 "Tahrirlash"
               ) : (
                 "Ro'yhatdan o'tish"

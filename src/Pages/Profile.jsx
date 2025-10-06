@@ -24,6 +24,7 @@ const Profile = () => {
   }, [navigate]);
 
   const handleEdit = () => {
+    localStorage.setItem("is_edit", "true");
     navigate("/register", { state: { userProfile } });
   };
 
@@ -37,6 +38,12 @@ const Profile = () => {
       </div>
     );
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem("userProfile");
+    navigate("/register");
+    window.location.reload();
+  };
 
   return (
     <div className="w-full h-full">
@@ -98,6 +105,7 @@ const Profile = () => {
             <Edit className="w-5 h-5" />
             <span>Ma'lumotlarni tahrirlash</span>
           </button>
+        <h1 onClick={handleLogout} className="text-red-500 text-center mt-5">Chiqish</h1>
         </div>
       </div>
     </div>
