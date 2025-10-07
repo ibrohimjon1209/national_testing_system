@@ -13,25 +13,25 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const isEditing = !!location.state?.userProfile;
   // ✅ Telegram aniqlash
-  useEffect(() => {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.expand();
-      window.Telegram.WebApp.ready();
-      setIsTelegramWebApp(true);
-    } else if (/TelegramDesktop/i.test(userAgent)) {
-      setIsTelegramWebApp(true);
-    } else {
-      window.location.href = "https://t.me/nsd_corporation";
-    }
-  }, []);
-
+  // useEffect(() => {
+  //   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  //   if (window.Telegram?.WebApp) {
+  //     window.Telegram.WebApp.expand();
+  //     window.Telegram.WebApp.ready();
+  //     setIsTelegramWebApp(true);
+  //   } else if (/TelegramDesktop/i.test(userAgent)) {
+    //   } else {
+      //     window.location.href = "https://t.me/nsd_corporation";
+  //   }
+  // }, []);
+  
   // ✅ Foydalanuvchini tekshirish
   useEffect(() => {
     const checkTelegramUser = async () => {
+          setIsTelegramWebApp(true);
       if (!isTelegramWebApp) return;
 
       const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
@@ -63,7 +63,7 @@ const App = () => {
           );
 
           // Agar foydalanuvchi Register sahifasida bo‘lsa → asosiy sahifaga o‘tkaz
-          if (location.pathname === "/register") navigate("/");
+          if (location.pathname === "/register" && !isEditing && localStorage.getItem("userProfile")) navigate("/");
         } else {
           // Foydalanuvchi topilmadi → Register sahifasiga
           localStorage.removeItem("userProfile");
