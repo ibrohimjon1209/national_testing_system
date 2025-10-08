@@ -34,6 +34,8 @@ const App = () => {
     setIsLoading(false);
   }, []);
 
+  
+
   useEffect(() => {
     const checkTelegramUser = async () => {
       if (!isTelegramWebApp) return;
