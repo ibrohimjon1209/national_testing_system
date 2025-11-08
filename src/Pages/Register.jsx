@@ -6,7 +6,7 @@ import update_user from "../Services/update_user";
 import { Building, MapPin, Phone, User } from "lucide-react";
 import get_subjects from "../Services/get_subjects";
 
-const Register = () => {
+const Register = ({ set_is_nav }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [s, ss] = useState(null);
@@ -22,6 +22,9 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    set_is_nav(false);
+  }, []);
   const regions = {
     Toshkent: [
       "Bekobod",

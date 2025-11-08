@@ -14,8 +14,8 @@ const App = () => {
   const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [is_nav, set_is_nav] = useState(false);
   const isEditing = !!location.state?.userProfile;
-  // ✅ Telegram aniqlash
   // useEffect(() => {
   //   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
   //   if (window.Telegram?.WebApp) {
@@ -23,15 +23,17 @@ const App = () => {
   //     window.Telegram.WebApp.ready();
   //     setIsTelegramWebApp(true);
   //   } else if (/TelegramDesktop/i.test(userAgent)) {
-    //   } else {
-      //     window.location.href = "https://t.me/nsd_corporation";
+  //   } else {
+  //     window.location.href = "https://t.me/nsd_corporation";
   //   }
   // }, []);
-  
-  // ✅ Foydalanuvchini tekshirish
+
   useEffect(() => {
+    if (location.pathname != "/register") {
+      set_is_nav(true);
+    }
     const checkTelegramUser = async () => {
-          setIsTelegramWebApp(true);
+      setIsTelegramWebApp(true);
       if (!isTelegramWebApp) return;
 
       const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
@@ -62,10 +64,13 @@ const App = () => {
             })
           );
 
-          // Agar foydalanuvchi Register sahifasida bo‘lsa → asosiy sahifaga o‘tkaz
-          if (location.pathname === "/register" && !isEditing && localStorage.getItem("userProfile")) navigate("/");
+          if (
+            location.pathname === "/register" &&
+            !isEditing &&
+            localStorage.getItem("userProfile")
+          )
+            navigate("/");
         } else {
-          // Foydalanuvchi topilmadi → Register sahifasiga
           localStorage.removeItem("userProfile");
           navigate("/register");
         }
@@ -111,11 +116,14 @@ const App = () => {
   }
 
   return (
-    <div className="flex flex-col h-auto justify-between items-center overflow-hidden overflow-y-auto">
-      <div className="w-full h-full pb-[100px] bg-[#1a2328] mx-auto flex flex-col items-center justify-between">
+    <div className="flex flex-col h-auto justify-between items-center overflow-hidden">
+      <div className="w-full h-full pb-[120px] bg-[#1a2328] mx-auto flex flex-col items-center justify-between">
         <Routes>
           <Route path="/" element={<Subject_list />} />
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/register"
+            element={<Register set_is_nav={set_is_nav} is_nav={is_nav} />}
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/test/:id" element={<Single_subject />} />
           <Route path="/create_test" element={<Create_test />} />
@@ -129,8 +137,8 @@ const App = () => {
         </Routes>
       </div>
 
-      {location.pathname !== "/register" && (
-        <div className="fixed w-full bottom-0">
+      {is_nav && (
+        <div className="fixed bottom-0 w-full">
           <Navbar />
         </div>
       )}
