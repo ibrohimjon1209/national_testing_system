@@ -9,6 +9,7 @@ const register = (payload) => {
     phone: payload.phone,
     region: payload.region,
     district: payload.district,
+    init_data: window.Telegram?.WebApp?.initData,
   };
   return API.post("/api/users/", data).then((res) => res.data);
 };

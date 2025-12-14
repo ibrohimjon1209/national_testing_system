@@ -1,6 +1,6 @@
 import { API } from "./base";
 
-const update_user = (id, payload) => {
+const update_user = (payload) => {
   const data = {
     telegram_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
     surname: payload.lastName,
@@ -9,8 +9,12 @@ const update_user = (id, payload) => {
     phone: payload.phone,
     region: payload.region,
     district: payload.district,
+    init_data: window.Telegram?.WebApp?.initData,
   };
-  return API.put(`/api/users/${id}/`, data).then((res) => res.data);
+  return API.put(
+    `/api/users/${window.Telegram?.WebApp?.initDataUnsafe?.user?.id}/`,
+    data
+  ).then((res) => res.data);
 };
 
 export default update_user;

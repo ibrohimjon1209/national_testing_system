@@ -36,7 +36,13 @@ const Subject_list = () => {
 
   return (
     <div className="w-full h-full">
-      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center gradient-primary shadow-modern-lg z-10">
+      <div
+        className="header sticky top-0 w-full h-[150px] flex items-center justify-center z-10 bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41]"
+        style={{
+          boxShadow:
+            "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+        }}
+      >
         <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight">
           Milliy sertifikat testlari
         </h1>

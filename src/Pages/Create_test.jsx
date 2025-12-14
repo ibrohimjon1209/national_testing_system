@@ -347,7 +347,7 @@ const Create_test = () => {
 
   return (
     <div className='w-full h-full'>
-      <div className="header sticky top-0 w-full h-[150px] flex flex-col justify-center gradient-primary shadow-modern-lg z-10">
+      <div className="header sticky top-0 w-full h-[150px] flex flex-col justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
         <Link to={"/web.telegram.org"}>
           <div className='flex gap-[5px] ml-[10px] mt-[-40px] underline'>
             <CircleQuestionMark className='text-white' />
@@ -377,7 +377,7 @@ const Create_test = () => {
 
         <button
           onClick={handleCheckbox}
-          className='active:scale-[97%] active:bg-[#695db6] duration-150 mt-[10px] w-full h-[45px] bg-[#3421b0] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-between px-[15px]'
+          className='active:scale-[97%] active:bg-[#695db6] duration-150 mt-[10px] w-full h-[45px] bg-gradient-to-bl from-[-90%] to-[80%] from-[#3579bd] to-[#1b3b5b] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-between px-[15px]'
         >
           <span>Test hammaga ko'rinsinmi?</span>
           <div
@@ -485,7 +485,7 @@ const Create_test = () => {
                       <div className='flex items-center gap-2'>
                         <button
                           onClick={() => increaseCount(originalQ)}
-                          className='w-8 h-8 rounded-md bg-[#7c3aed] text-white flex items-center justify-center text-lg shadow'
+                          className='w-8 h-8 rounded-md bg-gradient-to-bl from-[-30%] to-[90%] from-[#3579bd] to-[#1b3b5b] text-white flex items-center justify-center text-lg shadow'
                           disabled={(count) >= 45}
                         >
                           +
@@ -532,7 +532,7 @@ const Create_test = () => {
             disabled={!isFormValid()}
             className={`mt-[30px] duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]
               ${isFormValid() 
-                ? 'active:scale-[95%] active:bg-blue-300 gradient-primary shadow-modern-lg z-10' 
+                ? 'active:scale-[95%] active:bg-blue-300 bg-gradient-to-bl from-[-90%] to-[80%] from-[#3579bd] to-[#1b3b5b] shadow-modern-lg z-10' 
                 : 'bg-gray-500 cursor-not-allowed opacity-50'
               }`}
           >

@@ -13,7 +13,7 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!location.state?.userProfile;
 
   useEffect(() => {
@@ -38,19 +38,23 @@ const App = () => {
 
   useEffect(() => {
     const checkTelegramUser = async () => {
+          setIsTelegramWebApp(true);
       if (!isTelegramWebApp) return;
 
       const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
       if (!telegramId) {
         console.error("Telegram user ID not found");
+        navigate("/register");
         return;
       }
 
       try {
-        const userData = await get_user(Number(telegramId));
-        if (userData?.data) {
-          const user = userData.data;
+        const response = await get_user(Number(telegramId));
+        const user = response?.data;
+
+        if (user) {
+          // ✅ localStorage ga yozish
           localStorage.setItem(
             "userProfile",
             JSON.stringify({
@@ -64,29 +68,38 @@ const App = () => {
               telegram_id: user.telegram_id,
             })
           );
-          if (location.pathname === "/register") {
-            navigate("/");
-          }
+
+          // Agar foydalanuvchi Register sahifasida bo‘lsa → asosiy sahifaga o‘tkaz
+          if (location.pathname === "/register" && !isEditing && localStorage.getItem("userProfile")) navigate("/");
         } else {
-          if (location.pathname !== "/register") {
-            navigate("/register");
-          }
-        }
-      } catch (error) {
-        if (location.pathname !== "/register") {
+          // Foydalanuvchi topilmadi → Register sahifasiga
+          localStorage.removeItem("userProfile");
           navigate("/register");
         }
+      } catch (error) {
         console.error("Failed to fetch user:", error);
+        localStorage.removeItem("userProfile");
+        navigate("/register");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     checkTelegramUser();
-  }, [isTelegramWebApp, location.pathname, navigate]);
+
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        window.location.href = "https://t.me/nsd_corporation";
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [isTelegramWebApp, location.pathname, navigate, isLoading]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
-        <h1 className="text-2xl font-bold mb-4">Yuklanmoqda...</h1>
+      <div className="flex flex-col h-screen justify-center items-center bg-[#1a2328] text-[#e2e8f0] text-center p-10">
+        <h1 className="text-2xl font-bold mb-4">Yuklanmoqda... Biroz kuting iltmos </h1>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
@@ -94,11 +107,11 @@ const App = () => {
 
   if (!isTelegramWebApp) {
     return (
-      <div className="flex flex-col h-screen justify-center items-center bg-[#0f1419] text-white text-center p-10">
+      <div className="flex flex-col h-screen justify-center items-center bg-[#1a2328] text-[#e2e8f0] text-center p-10">
         <h1 className="text-2xl font-bold mb-4">
           Bu sayt faqat Telegram Web App uchun
         </h1>
-        <p className="mb-6 text-xl">Telegram botga yo'naltirilmoqda...</p>
+        <p className="mb-6 text-xl">Telegram botga yo'nalitirilmoqda...</p>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
@@ -106,28 +119,28 @@ const App = () => {
 
   return (
     <div className="flex flex-col h-auto justify-between items-center overflow-hidden overflow-y-auto">
-      <div className="w-full h-full pb-[130px] bg-[#0f1419] mx-auto flex flex-col items-center justify-between">
+      <div className="w-full h-full pb-[100px] bg-[#1a2328] mx-auto flex flex-col items-center justify-between">
         <Routes>
-          <Route path="/" element={<Subject_list />}></Route>
-          <Route path="/register" element={<Register />}></Route>
-          <Route path="/profile" element={<Profile />}></Route>
-          <Route path="/test/:id" element={<Single_subject />}></Route>
-          <Route path="/create_test" element={<Create_test />}></Route>
-          <Route path="/send_test" element={<Send_test />}></Route>
+          <Route path="/" element={<Subject_list />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/test/:id" element={<Single_subject />} />
+          <Route path="/create_test" element={<Create_test />} />
+          <Route path="/send_test" element={<Send_test />} />
           <Route
             path="*"
             element={
-              <div className="text-white text-center p-10">404 Not Found</div>
+              <div className="text-white text-center p-10">404 Page not found </div>
             }
           />
         </Routes>
-        <div className=""></div>
       </div>
-      <div className="fixed w-full mt-[90vh]">
-        {location.pathname !== "/sign_in" &&
-          location.pathname !== "/404" &&
-          location.pathname !== "/register" && <Navbar />}
-      </div>
+
+      {location.pathname !== "/register" && (
+        <div className="fixed w-full bottom-0">
+          <Navbar />
+        </div>
+      )}
     </div>
   );
 };

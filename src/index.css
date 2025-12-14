@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Blue-gray color palette - easy on the eyes */
-  --background: #0f1419;
+  --background: #1a2328;
   --foreground: #e2e8f0;
   --card: #1a2328;
   --card-foreground: #e2e8f0;
@@ -82,12 +81,4 @@ body {
 
 .shadow-modern-lg {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-
-.gradient-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-}
-
-.gradient-secondary {
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--muted) 100%);
 }

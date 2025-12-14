@@ -229,7 +229,7 @@ const Register = () => {
         const subjectsList = data.results || ["not found"];
         ss(subjectsList);
       } catch (e) {
-        ss(error)
+        ss(error);
         console.error("Failed to fetch data", e);
       }
     };
@@ -269,7 +269,19 @@ const Register = () => {
       let response;
 
       if (isEditing) {
-        response = await update_user(formData.id, formData);
+        try {
+          response = await update_user(formData);
+        } catch (updateError) {
+          // Agar 404 xatosi bo'lsa
+          if (updateError?.response?.status === 404) {
+            // UserProfile ni o'chirish
+            localStorage.removeItem("userProfile");
+            // Registerga qaytarish
+            navigate("/register");
+            return;
+          }
+          throw updateError; // Boshqa xatolar uchun
+        }
       } else {
         response = await register(formData);
       }
@@ -319,7 +331,7 @@ const Register = () => {
           setError("Foydalanuvchi ma'lumotlarini olishda xatolik yuz berdi");
         }
       } else {
-        alert(error)
+        alert(error);
         setError(
           isEditing
             ? "Ma'lumotlarni yangilashda xatolik yuz berdi"
@@ -471,28 +483,40 @@ const Register = () => {
             <div className="text-red-500 text-sm text-center">{error}</div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-gradient-to-r from-[#4a90e2] to-[#357abd] text-white py-3 rounded-xl font-semibold 
-              ${
-                loading
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:from-[#357abd] hover:to-[#2968a3]"
-              } 
-              transition-all duration-200 mt-6 shadow-lg`}
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                <span>Yuklanmoqda...</span>
-              </div>
-            ) : isEditing ? (
-              "Tahrirlash"
-            ) : (
-              "Ro'yhatdan o'tish"
+          <div className="flex space-x-4 mt-6">
+            {isEditing && (
+              <button
+                type="button"
+                onClick={() => (window.location.href = "/profile")}
+                className="w-full bg-gray-400 text-gray-900 py-3 rounded-xl font-semibold 
+        hover:bg-gray-600 transition-all duration-200 shadow-lg"
+              >
+                Bekor qilish
+              </button>
             )}
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full bg-gradient-to-bl from-[-50%] to-[90%] from-[#3579bd] to-[#1b3b5b] text-white py-3 rounded-xl font-semibold 
+      ${
+        loading
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:from-[#357abd] hover:to-[#2968a3]"
+      } 
+      transition-all duration-200 shadow-lg`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <span>Yuklanmoqda...</span>
+                </div>
+              ) : isEditing ? (
+                "Tahrirlash"
+              ) : (
+                "Ro'yhatdan o'tish"
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>
