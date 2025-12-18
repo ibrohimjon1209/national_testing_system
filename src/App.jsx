@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Subject_list from "./Pages/Subject_list";
 import Create_test from "./Pages/Create_test";
 import Send_test from "./Pages/Send_test";
@@ -14,6 +14,7 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+  const handledStartParam = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const [is_nav, set_is_nav] = useState(false);
   const isEditing = !!location.state?.userProfile;
@@ -46,6 +47,7 @@ const App = () => {
       if (!isTelegramWebApp) return;
 
       const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
 
       if (!telegramId) {
         console.error("Telegram user ID not found");
@@ -71,6 +73,15 @@ const App = () => {
               telegram_id: user.telegram_id,
             })
           );
+
+          if (!handledStartParam.current && startParam && startParam.startsWith("test_")) {
+            handledStartParam.current = true;
+            const testCode = startParam.split("test_")[1];
+            if (testCode) {
+              navigate(`/start/${testCode}`);
+              return;
+            }
+          }
 
           if (
             location.pathname === "/register" &&

@@ -301,7 +301,7 @@ const Register = ({ set_is_nav }) => {
             navigate("/register");
             return;
           }
-          throw updateError; 
+          throw updateError;
         }
       } else {
         response = await register(formData);
@@ -315,6 +315,15 @@ const Register = ({ set_is_nav }) => {
           telegram_id: response.telegram_id,
         })
       );
+
+      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+      if (!isEditing && startParam && startParam.startsWith("test_")) {
+        const testCode = startParam.split("test_")[1];
+        if (testCode) {
+          navigate(`/start/${testCode}`);
+          return;
+        }
+      }
 
       navigate(isEditing ? "/profile" : "/");
     } catch (error) {
@@ -343,6 +352,15 @@ const Register = ({ set_is_nav }) => {
                 telegram_id: user.telegram_id,
               })
             );
+
+            const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+            if (startParam && startParam.startsWith("test_")) {
+              const testCode = startParam.split("test_")[1];
+              if (testCode) {
+                navigate(`/start/${testCode}`);
+                return;
+              }
+            }
 
             navigate("/");
             return;
