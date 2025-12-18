@@ -17,24 +17,32 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [is_nav, set_is_nav] = useState(false);
   const isEditing = !!location.state?.userProfile;
-  // useEffect(() => {
-  //   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  //   if (window.Telegram?.WebApp) {
-  //     window.Telegram.WebApp.expand();
-  //     window.Telegram.WebApp.ready();
-  //     setIsTelegramWebApp(true);
-  //   } else if (/TelegramDesktop/i.test(userAgent)) {
-  //   } else {
-  //     window.location.href = "https://t.me/nsd_corporation";
-  //   }
-  // }, []);
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    console.log("UserAgent:", userAgent);
+
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.expand();
+      window.Telegram.WebApp.ready();
+      setIsTelegramWebApp(true);
+    } else if (/TelegramDesktop/i.test(userAgent)) {
+      setIsTelegramWebApp(true);
+    } else {
+      window.location.href = "https://t.me/milliy_test_sertifikat_bot";
+    }
+
+    setIsLoading(false);
+  }, []);
+
+
 
   useEffect(() => {
     if (location.pathname != "/register") {
       set_is_nav(true);
     }
     const checkTelegramUser = async () => {
-      setIsTelegramWebApp(true);
       if (!isTelegramWebApp) return;
 
       const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
@@ -50,7 +58,6 @@ const App = () => {
         const user = response?.data;
 
         if (user) {
-          // ✅ localStorage ga yozish
           localStorage.setItem(
             "userProfile",
             JSON.stringify({
@@ -88,7 +95,7 @@ const App = () => {
 
     const timeoutId = setTimeout(() => {
       if (isLoading) {
-        window.location.href = "https://t.me/nsd_corporation";
+        window.location.href = "https://t.me/milliy_test_sertifikat_bot";
       }
     }, 5000);
 
@@ -98,7 +105,7 @@ const App = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen justify-center items-center bg-[#1a2328] text-[#e2e8f0] text-center p-10">
-        <h1 className="text-2xl font-bold mb-4">Yuklanmoqda...</h1>
+        <h1 className="text-2xl font-bold mb-4">Yuklanmoqda... Biroz kuting iltmos </h1>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
@@ -110,7 +117,7 @@ const App = () => {
         <h1 className="text-2xl font-bold mb-4">
           Bu sayt faqat Telegram Web App uchun
         </h1>
-        <p className="mb-6 text-xl">Telegram botga yo'naltirilmoqda...</p>
+        <p className="mb-6 text-xl">Telegram botga yo'nalitirilmoqda...</p>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a90e2]"></div>
       </div>
     );
@@ -133,7 +140,7 @@ const App = () => {
           <Route
             path="*"
             element={
-              <div className="text-white text-center p-10">404 Not Found</div>
+              <div className="text-white text-center p-10">404 Page not found </div>
             }
           />
         </Routes>
