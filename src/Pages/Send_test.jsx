@@ -1,9 +1,10 @@
 import { CircleCheck, Loader2, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import get_subject_tests from '../Services/get_test'
 import check_answers from '../Services/check_answers';
+import { useEffect } from 'react';
 
 const Send_test = () => {
   const [isFind, setIsFind] = useState(false)
@@ -15,70 +16,83 @@ const Send_test = () => {
   const [testData, setTestData] = useState(null)
   const [apiError, setApiError] = useState(null)
   const navigate = useNavigate();
+  const location = useLocation();
 
-const handleInputChange = (e) => {
-  const value = e.target.value
-  setInputValue(value)
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    setInputValue(value)
 
-  if (/^\d*$/.test(value)) {
-    setIsError(false)
-  } else {
-    setIsError(true)
+    if (/^\d*$/.test(value)) {
+      setIsError(false)
+    } else {
+      setIsError(true)
+    }
   }
-}
 
-const handleIsFind = async () => {
-  if (/^\d+$/.test(inputValue)) {
-    setLoading(true)
-    setIsError(false)
-    setApiError(null)
-    
-    try {
-      const data = await get_subject_tests(inputValue)
-      
-      // Check if test is active
-      if (!data.is_active) {
-        setApiError("Bu test endi aktiv emas!")
-        setIsFind(false)
-        return
-      }
-      
-      // Check if test has started
-      if (data.start_time) {
-        const startTime = new Date(data.start_time)
-        if (startTime > new Date()) {
-          setApiError("Test hali boshlanmagan!")
+  const verifyTest = async (testId) => {
+    if (/^\d+$/.test(testId)) {
+      setLoading(true)
+      setIsError(false)
+      setApiError(null)
+
+      try {
+        const data = await get_subject_tests(testId)
+
+        // Check if test is active
+        if (!data.is_active) {
+          setApiError("Bu test endi aktiv emas!")
           setIsFind(false)
           return
         }
+
+        // Check if test has started
+        if (data.start_time) {
+          const startTime = new Date(data.start_time)
+          if (startTime > new Date()) {
+            setApiError("Test hali boshlanmagan!")
+            setIsFind(false)
+            return
+          }
+        }
+
+        setTestData(data)
+        setIsFind(true)
+
+        // Initialize multiValues based on actual data
+        const multiQuestions = Object.keys(data.answers)
+          .filter(q => parseInt(q) >= 36)
+          .map(q => parseInt(q))
+
+        setMultiValues(
+          multiQuestions.reduce((acc, q) => ({
+            ...acc,
+            [q]: Array(Object.keys(data.answers[q]).length).fill('')
+          }), {})
+        )
+
+      } catch (err) {
+        setApiError("Test topilmadi yoki xatolik yuz berdi")
+        setIsFind(false)
+      } finally {
+        setLoading(false)
       }
-
-      setTestData(data)
-      setIsFind(true)
-      
-      // Initialize multiValues based on actual data
-      const multiQuestions = Object.keys(data.answers)
-        .filter(q => parseInt(q) >= 36)
-        .map(q => parseInt(q))
-      
-      setMultiValues(
-        multiQuestions.reduce((acc, q) => ({
-          ...acc,
-          [q]: Array(Object.keys(data.answers[q]).length).fill('')
-        }), {})
-      )
-
-    } catch (err) {
-      setApiError("Test topilmadi yoki xatolik yuz berdi")
+    } else {
       setIsFind(false)
-    } finally {
-      setLoading(false)
+      setIsError(true)
     }
-  } else {
-    setIsFind(false)
-    setIsError(true)
   }
-}
+
+  const handleIsFind = () => {
+    verifyTest(inputValue)
+  }
+
+  useEffect(() => {
+    if (location.state?.testId) {
+      const testId = location.state.testId.toString()
+      setInputValue(testId)
+      verifyTest(testId)
+    }
+  }, [location.state])
 
   const [answers, setAnswers] = useState({})
   const [errors, setErrors] = useState({})
@@ -136,7 +150,7 @@ const handleIsFind = async () => {
   // Update handleCreate to only include filled answers
   const handleCreate = async () => {
     setSubmitting(true);
-    
+
     try {
       // Format answers - only include non-empty answers
       const userAnswers = {
@@ -144,7 +158,7 @@ const handleIsFind = async () => {
         ...Object.fromEntries(
           Object.entries(answers).filter(([_, value]) => value)
         ),
-        
+
         // Multi-answers (36+) - only include questions with at least one answer
         ...Object.entries(multiValues)
           .filter(([_, values]) => values.some(v => v.trim()))
@@ -155,7 +169,7 @@ const handleIsFind = async () => {
               }
               return obj;
             }, {});
-            
+
             if (Object.keys(answerObj).length > 0) {
               acc[question] = answerObj;
             }
@@ -167,7 +181,7 @@ const handleIsFind = async () => {
       console.log(result)
       setSubmitting(false);
       setSubmitted(true);
-      
+
     } catch (error) {
       console.error('Failed to check answers:', error);
       setApiError("Javoblarni tekshirishda xatolik yuz berdi");

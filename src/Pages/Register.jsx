@@ -252,7 +252,7 @@ const Register = ({ set_is_nav }) => {
       try {
         const parsed = JSON.parse(stored);
         setFormData((prev) => ({ ...prev, ...parsed }));
-      } catch (e) {}
+      } catch (e) { }
     }
   }, [location.state]);
 
@@ -260,11 +260,32 @@ const Register = ({ set_is_nav }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "phone") {
+      let formattedValue = value.replace(/[^\d+]/g, "");
+
+      if (!formattedValue.startsWith("+998")) {
+        formattedValue = "+998";
+      }
+
+      if (formattedValue.length > 13) {
+        formattedValue = formattedValue.slice(0, 13);
+      }
+
+      setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.phone.length !== 13) {
+      setError("Telefon raqami to'liq kiritilishi kerak (+998XXXXXXXXX)");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -275,15 +296,12 @@ const Register = ({ set_is_nav }) => {
         try {
           response = await update_user(formData);
         } catch (updateError) {
-          // Agar 404 xatosi bo'lsa
           if (updateError?.response?.status === 404) {
-            // UserProfile ni o'chirish
             localStorage.removeItem("userProfile");
-            // Registerga qaytarish
             navigate("/register");
             return;
           }
-          throw updateError; // Boshqa xatolar uchun
+          throw updateError; 
         }
       } else {
         response = await register(formData);
@@ -501,11 +519,10 @@ const Register = ({ set_is_nav }) => {
               type="submit"
               disabled={loading}
               className={`w-full bg-gradient-to-bl from-[-50%] to-[90%] from-[#3579bd] to-[#1b3b5b] text-white py-3 rounded-xl font-semibold 
-      ${
-        loading
-          ? "opacity-50 cursor-not-allowed"
-          : "hover:from-[#357abd] hover:to-[#2968a3]"
-      } 
+      ${loading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:from-[#357abd] hover:to-[#2968a3]"
+                } 
       transition-all duration-200 shadow-lg`}
             >
               {loading ? (

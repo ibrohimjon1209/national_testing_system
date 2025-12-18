@@ -80,7 +80,7 @@ const Single_subject = () => {
                     <div className="w-full h-full  pl-[25px] flex flex-col justify-evenly">
                       <div className="bg-gradient-to-bl from-[-50%] to-[96%] from-[#3579bd] to-[#1b3b5b] w-[140px] h-[25px] overflow-hidden rounded-[5px] flex justify-center items-center">
                         <h1 className="font-inter font-[600] text-[12px] max-w-[140] truncate text-white mx-[5px]">
-                          {test.channel_username}sdfasdfasdfasdfasdf
+                          {test.channel_username}
                         </h1>
                       </div>
                       <h1 className="text-white text-[13px]">
@@ -90,7 +90,7 @@ const Single_subject = () => {
 
                     <div>
                       <button
-                        onClick={() => (window.location.href = `https://t.me/${test.channel_username}`)}
+                        onClick={() => window.open(`https://t.me/${test.channel_username.replace('@', '')}`)}
                         className="w-[140px] h-[40px] rounded-[10px] bg-gradient-to-bl from-[-40%] to-[96%] from-[#3579bd] to-[#1b3b5b] text-white font-[600] font-inter active:bg-[#357abd]"
                       >
                         Kanalga o'tish

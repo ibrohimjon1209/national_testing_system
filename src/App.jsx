@@ -8,6 +8,7 @@ import Single_subject from "./Pages/Single_subject";
 import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
 import get_user from "./Services/get_user";
+import Fast_test_starter from "./Pages/Fast_test_starter";
 
 const App = () => {
   const location = useLocation();
@@ -128,6 +129,7 @@ const App = () => {
           <Route path="/test/:id" element={<Single_subject />} />
           <Route path="/create_test" element={<Create_test />} />
           <Route path="/send_test" element={<Send_test />} />
+          <Route path="/start/:id" element={<Fast_test_starter />} />
           <Route
             path="*"
             element={
