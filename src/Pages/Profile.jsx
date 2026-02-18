@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Phone, MapPin, Building, Edit } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { User, Phone, MapPin, Building, Edit, ChevronLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -42,14 +42,23 @@ const Profile = () => {
     <div className="w-full h-full">
       <div className="bg-[#1a2328] h-full overflow-hidden">
         {/* Header */}
-        <div className="header sticky top-0 w-full h-full py-10 flex flex-col items-center justify-center bg-gradient-to-b from-[-30%] to-[70%] from-[#3579bd] to-[#1a2328] z-10">
+        <div className="header sticky top-0 w-full h-full pb-10 flex flex-col items-center justify-center bg-gradient-to-b from-[-30%] to-[70%] from-[#3579bd] to-[#1a2328] z-10">
+
+          <div className="w-full ml-[60px] mt-[40px]">
+            <Link className='50px ' to={'/'}>
+              <ChevronLeft className='scale-[110%]' />
+            </Link>
+          </div>
           <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-lg">
             {telegramPhoto ? (
-              <img
-                src={telegramPhoto}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+              <div className="w-full h-full">
+                <img
+                  src={telegramPhoto}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
             ) : (
               <div className="w-full h-full bg-white flex items-center justify-center">
                 <User className="w-12 h-12 text-[#4a90e2]" />

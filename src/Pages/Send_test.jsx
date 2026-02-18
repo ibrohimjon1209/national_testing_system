@@ -1,7 +1,7 @@
-import { CircleCheck, Loader2, CheckCircle } from 'lucide-react'
+import { CircleCheck, Loader2, CheckCircle, ArrowLeft, ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import get_subject_tests from '../Services/get_test'
 import check_answers from '../Services/check_answers';
 import { useEffect } from 'react';
@@ -199,8 +199,12 @@ const Send_test = () => {
 
   return (
     <div className='w-full h-full relative'>
-      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
+      <div className="header sticky top-0 w-full h-[150px] flex items-center justify-between px-[30px] bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
+        <Link  className='50px'  to={'/'}>
+          <ChevronLeft className='scale-[110%]' />
+        </Link>
         <h1 className="text-white font-bold text-[30px] text-center px-6 leading-tight">{testData?.subject_name || "MS"} testni yuborish</h1>
+        <div className='w-[50px]'></div>
       </div>
 
       <div className='w-full h-full px-[25px]'>

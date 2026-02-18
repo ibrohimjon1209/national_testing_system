@@ -1,4 +1,4 @@
-import { CircleQuestionMark, Check, CircleCheck } from 'lucide-react'
+import { CircleQuestionMark, Check, CircleCheck, ChevronLeft } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './style.css'
@@ -52,7 +52,7 @@ const Create_test = () => {
       questionsOrder.forEach(q => {
         const count = multiCounts[q] ?? 0;
         let arr = prev[q] || [];
-        
+
         if (count === 0) {
           newVals[q] = [];
         } else {
@@ -85,7 +85,7 @@ const Create_test = () => {
         setQuestionsOrder(prevOrder => {
           const without = prevOrder.filter(x => x !== question)
           const activeQuestions = without.filter(q => (multiCounts[q] ?? 0) > 0)
-          
+
           if (activeQuestions.length === 0) {
             return [question, ...without]
           }
@@ -120,12 +120,12 @@ const Create_test = () => {
         setQuestionsOrder(prevOrder => {
           const currentIndex = prevOrder.indexOf(question);
           const newOrder = [...prevOrder];
-          
+
           for (let i = currentIndex; i < newOrder.length - 1; i++) {
             newOrder[i] = newOrder[i + 1];
           }
           newOrder[newOrder.length - 1] = question;
-          
+
           return newOrder;
         });
       }
@@ -236,7 +236,7 @@ const Create_test = () => {
       const count = multiCounts[q] ?? 0;
       const rawValues = multiValues[q] || [];
       const values = rawValues.slice(0, count); // Safety trim
-      
+
       return count === 0 || (
         values.length === count &&
         values.every(value => value?.trim().length > 0)
@@ -256,7 +256,7 @@ const Create_test = () => {
 
   const formatAnswers = () => {
     const formattedAnswers = {};
-    
+
     for (let i = 1; i <= 35; i++) {
       if (answers[i]) {
         formattedAnswers[i] = answers[i].toUpperCase();
@@ -266,13 +266,13 @@ const Create_test = () => {
     for (let idx = 0; idx < questionsOrder.length; idx++) {
       const originalQ = questionsOrder[idx]
       const count = multiCounts[originalQ] ?? 0
-      
+
       if (count > 0) {
         const rawValues = multiValues[originalQ] || []
         const values = rawValues.slice(0, count) // Safety trim
         const isComplete = values.length === count &&
-                          values.every(value => value && value.trim().length > 0)
-        
+          values.every(value => value && value.trim().length > 0)
+
         if (isComplete) {
           formattedAnswers[36 + idx] = {}
           values.forEach((value, index) => {
@@ -337,7 +337,7 @@ const Create_test = () => {
           isChecked ? channelUsername : null,
           formattedDate
         );
-        
+
         window.location.href = "/"
       } catch (error) {
         console.error('Failed to create test:', error);
@@ -347,17 +347,17 @@ const Create_test = () => {
 
   return (
     <div className='w-full h-full'>
-      <div className="header sticky top-0 w-full h-[150px] flex flex-col justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
-        <Link to={"/web.telegram.org"}>
-          <div className='flex gap-[5px] ml-[10px] mt-[-40px] underline'>
-            <CircleQuestionMark className='text-white' />
-            <h1 className='font-inter text-[15px] text-white'>Yo'riqnoma</h1>
-          </div>
-        </Link>
+      <div className="header sticky top-0 w-full h-[120px] flex flex-col justify-center bg-gradient-to-b from-[-10%] to-[100%] from-[#3579bd] to-[#132a41] shadow-modern-lg z-10">
+        <div className='mt-[0px] px-[35px] flex  items-center justify-between'>
+          <Link to={'/create_test' } className='w-[50px] flex items-center'>
+              <ChevronLeft />
+          </Link>
 
-        <h1 className="text-white font-bold text-3xl text-center px-6 leading-tight mt-[10px]">
-          Test yaratish
-        </h1>
+          <h1 className="text-white font-bold text-2xl text-center px-6 leading-tight mt-[10px]">
+            Test yaratish
+          </h1>
+          <div className='w-[50px]'></div>
+        </div>
       </div>
 
       <div className='w-full h-full flex flex-col px-[7vw] mt-[25px]'>
@@ -422,7 +422,7 @@ const Create_test = () => {
                   type='datetime-local'
                   value={testDate}
                   onChange={handleDateChange}
-                  min={new Date().toISOString().slice(0,16)}
+                  min={new Date().toISOString().slice(0, 16)}
                   className={`[color-scheme:dark] custom-select w-full h-[45px] px-[10px] rounded-[5px] border-white border-[1px] text-white bg-[#242f34] focus:outline-none appearance-none focus:shadow-[0_0_10px_2px_rgba(59,130,246,0.8)] transition-shadow duration-300 ${dateError ? "border-red-500" : ""}`}
                 />
                 {dateError && <div className="text-red-500 text-sm mt-1">{dateError}</div>}
@@ -466,7 +466,7 @@ const Create_test = () => {
                 <tr key={index + 1} className='h-[40px] font-[600]'>
                   <td className='border border-gray-600 px-2 text-center'>{index + 33}</td>
                   {renderOptions(index + 33)}
-                </tr> 
+                </tr>
               ))}
             </tbody>
           </table>
@@ -531,8 +531,8 @@ const Create_test = () => {
             onClick={handleCreate}
             disabled={!isFormValid()}
             className={`mt-[30px] duration-150 w-full h-[45px] rounded-[5px] text-white font-inter font-[600] text-[13px] flex items-center justify-center gap-[5px] px-[15px]
-              ${isFormValid() 
-                ? 'active:scale-[95%] active:bg-blue-300 bg-gradient-to-bl from-[-90%] to-[80%] from-[#3579bd] to-[#1b3b5b] shadow-modern-lg z-10' 
+              ${isFormValid()
+                ? 'active:scale-[95%] active:bg-blue-300 bg-gradient-to-bl from-[-90%] to-[80%] from-[#3579bd] to-[#1b3b5b] shadow-modern-lg z-10'
                 : 'bg-gray-500 cursor-not-allowed opacity-50'
               }`}
           >

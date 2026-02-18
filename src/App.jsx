@@ -9,6 +9,9 @@ import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
 import get_user from "./Services/get_user";
 import Fast_test_starter from "./Pages/Fast_test_starter";
+import Dtm from "./Pages/dtm";
+import Create_option from "./Pages/Create_option";
+import Create_dtm from "./Pages/Create_dtm";
 
 const App = () => {
   const location = useLocation();
@@ -16,7 +19,7 @@ const App = () => {
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
   const handledStartParam = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [is_nav, set_is_nav] = useState(false);
+  const [is_nav, set_is_nav] = useState(true);
   const isEditing = !!location.state?.userProfile;
 
   useEffect(() => {
@@ -39,79 +42,79 @@ const App = () => {
 
 
 
-  useEffect(() => {
-    if (location.pathname != "/register") {
-      set_is_nav(true);
-    }
-    const checkTelegramUser = async () => {
-      if (!isTelegramWebApp) return;
+  // useEffect(() => {
+  //   if (location.pathname != "/register") {
+  //     set_is_nav(true);
+  //   }
+  //   const checkTelegramUser = async () => {
+  //     if (!isTelegramWebApp) return;
 
-      const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+  //     const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  //     const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
 
-      if (!telegramId) {
-        console.error("Telegram user ID not found");
-        navigate("/register");
-        return;
-      }
+  //     if (!telegramId) {
+  //       console.error("Telegram user ID not found");
+  //       navigate("/register");
+  //       return;
+  //     }
 
-      try {
-        const response = await get_user(Number(telegramId));
-        const user = response?.data;
+  //     try {
+  //       const response = await get_user(Number(telegramId));
+  //       const user = response?.data;
 
-        if (user) {
-          localStorage.setItem(
-            "userProfile",
-            JSON.stringify({
-              firstName: user.name || "",
-              lastName: user.surname || "",
-              middleName: user.father_name || "",
-              phone: user.phone || "+998",
-              region: user.region || "",
-              district: user.district || "",
-              id: user.id,
-              telegram_id: user.telegram_id,
-            })
-          );
+  //       if (user) {
+  //         localStorage.setItem(
+  //           "userProfile",
+  //           JSON.stringify({
+  //             firstName: user.name || "",
+  //             lastName: user.surname || "",
+  //             middleName: user.father_name || "",
+  //             phone: user.phone || "+998",
+  //             region: user.region || "",
+  //             district: user.district || "",
+  //             id: user.id,
+  //             telegram_id: user.telegram_id,
+  //           })
+  //         );
 
-          if (!handledStartParam.current && startParam && startParam.startsWith("test_")) {
-            handledStartParam.current = true;
-            const testCode = startParam.split("test_")[1];
-            if (testCode) {
-              navigate(`/start/${testCode}`);
-              return;
-            }
-          }
+  //         if (!handledStartParam.current && startParam && startParam.startsWith("test_")) {
+  //           handledStartParam.current = true;
+  //           const testCode = startParam.split("test_")[1];
+  //           if (testCode) {
+  //             navigate(`/start/${testCode}`);
+  //             return;
+  //           }
+  //         }
 
-          if (
-            location.pathname === "/register" &&
-            !isEditing &&
-            localStorage.getItem("userProfile")
-          )
-            navigate("/");
-        } else {
-          localStorage.removeItem("userProfile");
-          navigate("/register");
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        localStorage.removeItem("userProfile");
-        navigate("/register");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  //         if (
+  //           location.pathname === "/register" &&
+  //           !isEditing &&
+  //           localStorage.getItem("userProfile")
+  //         )
+  //           navigate("/");
+  //       } else {
+  //         localStorage.removeItem("userProfile");
+  //         navigate("/register");
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to fetch user:", error);
+  //       localStorage.removeItem("userProfile");
+  //       navigate("/register");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
 
-    checkTelegramUser();
+  //   checkTelegramUser();
 
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        window.location.href = "https://t.me/milliy_test_sertifikat_bot";
-      }
-    }, 5000);
+  //   const timeoutId = setTimeout(() => {
+  //     if (isLoading) {
+  //       window.location.href = "https://t.me/milliy_test_sertifikat_bot";
+  //     }
+  //   }, 5000);
 
-    return () => clearTimeout(timeoutId);
-  }, [isTelegramWebApp, location.pathname, navigate, isLoading]);
+  //   return () => clearTimeout(timeoutId);
+  // }, [isTelegramWebApp, location.pathname, navigate, isLoading]);
 
   if (isLoading) {
     return (
@@ -145,8 +148,11 @@ const App = () => {
           />
           <Route path="/profile" element={<Profile />} />
           <Route path="/test/:id" element={<Single_subject />} />
-          <Route path="/create_test" element={<Create_test />} />
+          <Route path="/create_test" element={<Create_option />} />
+          <Route path="/create_national" element={<Create_test />} />
+          <Route path="/create_dtm" element={<Create_dtm />} />
           <Route path="/send_test" element={<Send_test />} />
+          <Route path="/dtm" element={<Dtm />} />
           <Route path="/start/:id" element={<Fast_test_starter />} />
           <Route
             path="*"
